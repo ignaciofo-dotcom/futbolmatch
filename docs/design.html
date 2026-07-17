@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camino a la Copa — Design Document (HTML Edition)</title>
+<style>
+  :root{
+    --bg:#081226; --panel:#0e1d3d; --panel2:#122a55; --line:#1e3a6d;
+    --blue:#3b82f6; --cyan:#38bdf8; --gold:#f5c542; --green:#34d399;
+    --red:#ef4444; --text:#e8eef9; --muted:#9fb3d1; --pitch:#1b7a3d; --pitch2:#166534;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 20px 80px}
+  header.doc{border-bottom:2px solid var(--gold);padding-bottom:18px;margin-bottom:28px}
+  header.doc h1{margin:0 0 6px;font-size:2rem;color:var(--gold)}
+  header.doc p{margin:2px 0;color:var(--muted)}
+  h2{color:var(--cyan);border-bottom:1px solid var(--line);padding-bottom:6px;margin-top:44px;font-size:1.35rem}
+  h3{color:var(--text);margin-top:26px;font-size:1.05rem}
+  h4{color:var(--muted);margin-top:20px;font-size:.95rem;text-transform:uppercase;letter-spacing:.04em}
+  a{color:var(--cyan);text-decoration:none} a:hover{text-decoration:underline}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.92rem}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--cyan);font-weight:600}
+  tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.88em}
+  pre{background:#0a1830;border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font-size:.85rem;line-height:1.45}
+  pre code{background:none;border:none;padding:0}
+  kbd{display:inline-block;min-width:1.6em;text-align:center;padding:2px 7px;margin:0 1px;
+      background:linear-gradient(#2a4a86,#16305e);border:1px solid #3c62a8;border-bottom-width:3px;
+      border-radius:6px;font-family:inherit;font-size:.85em;font-weight:700;color:#fff}
+  .toc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 22px;columns:2;column-gap:36px}
+  .toc ol{margin:0;padding-left:20px;font-size:.9rem}
+  .toc li{margin:3px 0;break-inside:avoid}
+  .note{background:rgba(59,130,246,.12);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:10px 14px;margin:14px 0;font-size:.93rem}
+  .fix{background:rgba(245,197,66,.10);border-left:4px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 14px;margin:14px 0;font-size:.93rem}
+  .fix b:first-child{color:var(--gold)}
+  ul{margin:8px 0;padding-left:24px} li{margin:3px 0}
+  .tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:99px;
+       padding:1px 10px;font-size:.78rem;color:var(--muted);margin-left:6px;vertical-align:middle}
+  .tag.mvp{color:var(--green);border-color:var(--green)}
+  .tag.post{color:var(--gold);border-color:var(--gold)}
+
+  /* ===== Mockup framework ===== */
+  .mock{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:22px 0;overflow:hidden}
+  .mock .mock-title{background:var(--panel2);padding:8px 14px;font-size:.82rem;color:var(--muted);
+       text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line)}
+  .mock .screen{position:relative;aspect-ratio:16/9;background:radial-gradient(ellipse at 50% 0%,#14294f 0%,#0a1428 70%);
+       display:flex;flex-direction:column;overflow:hidden}
+  .hint{color:var(--muted);font-size:.78rem}
+  .btnrow{display:flex;gap:10px;justify-content:center;margin-top:10px}
+  .btn{background:var(--panel2);border:2px solid var(--line);border-radius:10px;color:var(--text);
+       padding:8px 22px;font-weight:700;font-size:.9rem}
+  .btn.sel{border-color:var(--gold);background:#243c14;color:#ffe9a8;box-shadow:0 0 12px rgba(245,197,66,.35)}
+  .btn.primary{border-color:var(--blue);background:#12336e}
+
+  /* menu mockup */
+  .menu-side{position:absolute;left:6%;top:14%;display:flex;flex-direction:column;gap:10px;width:30%}
+  .menu-side .btn{text-align:left}
+  .menu-logo{position:absolute;right:8%;top:16%;width:38%;text-align:center}
+  .menu-logo .ball{font-size:4.2rem;filter:drop-shadow(0 0 18px rgba(56,189,248,.5))}
+  .menu-logo .name{font-size:1.5rem;font-weight:900;color:var(--gold);letter-spacing:.04em}
+  .menu-hint{position:absolute;bottom:6%;left:0;right:0;text-align:center}
+
+  /* creation mockup */
+  .create-grid{position:absolute;inset:8% 6%;display:flex;gap:4%}
+  .avatar-box{flex:0 0 34%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .avatar{display:flex;flex-direction:column;align-items:center}
+  .avatar .head{width:44px;height:44px;border-radius:50%;background:#e0ac69;border:2px solid #0008}
+  .avatar .shirt{width:74px;height:64px;background:linear-gradient(#75aadb 33%,#fff 33%,#fff 66%,#75aadb 66%);
+       border-radius:10px 10px 6px 6px;margin-top:-6px;display:flex;align-items:center;justify-content:center;
+       font-weight:900;color:#123;font-size:1.3rem;border:2px solid #0008}
+  .avatar .shorts{width:56px;height:24px;background:#123;border-radius:0 0 8px 8px}
+  .form-box{flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center}
+  .field{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+       border-radius:8px;padding:6px 12px;font-size:.85rem}
+  .field label{color:var(--muted);width:34%}
+  .field .val{flex:1;text-align:center;font-weight:700}
+  .field.sel{border-color:var(--gold)}
+  .field .arr{color:var(--cyan);font-weight:900}
+
+  /* tournament path mockup */
+  .path{position:absolute;inset:7% 10%;display:flex;flex-direction:column-reverse;align-items:center;gap:0}
+  .round{display:flex;align-items:center;gap:14px;width:78%;background:var(--panel2);
+       border:1px solid var(--line);border-radius:10px;padding:7px 14px;font-size:.85rem}
+  .round .st{width:22px;text-align:center}
+  .round.done{opacity:.75;border-color:var(--green)} .round.done .st{color:var(--green)}
+  .round.cur{border-color:var(--gold);box-shadow:0 0 12px rgba(245,197,66,.3)}
+  .round.lock{opacity:.45}
+  .connector{width:3px;height:12px;background:var(--line)}
+  .round .who{margin-left:auto;color:var(--muted)}
+  .path-cup{font-size:1.6rem;margin-top:2px}
+
+  /* match HUD mockup */
+  .hud-screen{background:
+      radial-gradient(circle at 50% 45%, rgba(255,255,255,.05), transparent 40%),
+      repeating-linear-gradient(90deg,var(--pitch) 0 12.5%,var(--pitch2) 12.5% 25%) !important}
+  .pitch-lines{position:absolute;inset:9% 4% 14% 4%;border:2px solid rgba(255,255,255,.65);border-radius:4px}
+  .pitch-lines .mid{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.65)}
+  .pitch-lines .circle{position:absolute;left:50%;top:50%;width:17%;aspect-ratio:1;transform:translate(-50%,-50%);
+       border:2px solid rgba(255,255,255,.65);border-radius:50%}
+  .pitch-lines .area{position:absolute;top:28%;bottom:28%;width:12%;border:2px solid rgba(255,255,255,.65)}
+  .pitch-lines .area.l{left:0;border-left:none} .pitch-lines .area.r{right:0;border-right:none}
+  .dot{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #0006;
+       display:flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:900;color:#fff}
+  .dot.us{background:#2563eb} .dot.them{background:#eab308}
+  .dot.me{width:18px;height:18px;background:#2563eb;box-shadow:0 0 0 3px rgba(56,189,248,.8),0 0 14px #38bdf8}
+  .balldot{position:absolute;width:9px;height:9px;background:#fff;border-radius:50%;border:1px solid #0008}
+  .circle-ability{position:absolute;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+       justify-content:center;font-size:.85rem}
+  .circle-ability.speed{background:rgba(56,189,248,.25);border:2px solid #38bdf8;box-shadow:0 0 12px #38bdf8}
+  .circle-ability.shot{background:rgba(245,158,11,.25);border:2px solid #f59e0b;box-shadow:0 0 12px #f59e0b}
+  .hud-top{position:absolute;top:2.5%;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:0 2.5%}
+  .scorebox{background:#0a1428e0;border:1px solid var(--line);border-radius:8px;padding:4px 12px;
+       display:flex;gap:10px;align-items:center;font-weight:900;font-size:.95rem}
+  .scorebox .half{color:var(--gold);font-size:.75rem;font-weight:700}
+  .scorebox .clock{color:var(--green);font-family:ui-monospace,monospace}
+  .slots{display:flex;gap:6px;background:#0a1428e0;border:1px solid var(--line);border-radius:10px;padding:5px 8px}
+  .slot{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);background:var(--panel2);
+       position:relative;display:flex;align-items:center;justify-content:center;font-size:.95rem}
+  .slot.full.speed{border-color:#38bdf8}.slot.full.dribble{border-color:#34d399}
+  .slot.full.bike{border-color:#ef4444}
+  .slot .key{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);background:#16305e;
+       border:1px solid #3c62a8;border-radius:4px;font-size:.55rem;padding:0 4px;font-weight:900}
+  .slot.empty{opacity:.4}
+  .hud-bottom{position:absolute;bottom:2.5%;left:0;right:0;display:flex;justify-content:space-between;
+       align-items:flex-end;padding:0 2.5%}
+  .stamina{background:#0a1428e0;border:1px solid var(--line);border-radius:8px;padding:6px 10px;width:24%}
+  .stamina .bar{height:8px;border-radius:4px;background:#0a1428;border:1px solid var(--line);overflow:hidden}
+  .stamina .bar i{display:block;height:100%;width:72%;background:linear-gradient(90deg,#34d399,#a3e635)}
+  .stamina .lbl{font-size:.62rem;color:var(--muted);margin-bottom:3px}
+  .keylegend{background:#0a1428e0;border:1px solid var(--line);border-radius:8px;padding:6px 10px;
+       font-size:.68rem;display:flex;gap:12px;color:var(--muted)}
+  .keylegend b{color:var(--text)}
+
+  /* hydration mockup */
+  .hydration-panel{margin:auto;width:56%;background:var(--panel2);border:1px solid var(--line);
+       border-radius:14px;padding:20px 24px;text-align:center}
+  .hydration-panel h5{margin:0 0 6px;color:var(--cyan);font-size:1.05rem;letter-spacing:.06em}
+  .hydration-panel .count{font-family:ui-monospace,monospace;font-size:2rem;font-weight:900;color:var(--gold)}
+  .adbox{margin-top:12px;border:2px dashed var(--line);border-radius:10px;padding:14px;color:var(--muted);font-size:.8rem}
+
+  /* result mockup */
+  .result-grid{position:absolute;inset:6% 8%;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .result-grid .verdict{font-size:1.5rem;font-weight:900;color:var(--green);letter-spacing:.08em}
+  .result-grid .score{font-size:1.9rem;font-weight:900}
+  .result-grid .teams{color:var(--muted);font-size:.85rem}
+  .rstats{display:flex;gap:6%;width:88%;margin-top:4px;align-items:center}
+  .rstats table{font-size:.75rem;margin:0;width:48%;flex:0 0 48%}
+  .rstats td{padding:3px 8px}
+  .xp{flex:1}
+  .xp .lbl{font-size:.75rem;color:var(--muted)}
+  .xp .gain{color:var(--green);font-weight:900;font-size:1.1rem}
+  .xp .bar{height:10px;background:#0a1428;border:1px solid var(--line);border-radius:5px;overflow:hidden;margin:6px 0}
+  .xp .bar i{display:block;height:100%;width:64%;background:linear-gradient(90deg,#34d399,#a3e635)}
+
+  /* trophy mockup */
+  .trophy-grid{position:absolute;inset:8%;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+  .trophy-big{font-size:3.6rem;filter:drop-shadow(0 0 22px rgba(245,197,66,.7))}
+  .tiers{display:flex;gap:18px;margin-top:6px;font-size:.75rem;color:var(--muted);text-align:center}
+  .tiers span{display:flex;flex-direction:column;gap:2px}
+  .tiers .t{font-size:1.3rem}
+  .tiers .on{color:var(--gold);font-weight:700}
+  .reward-chip{background:var(--panel2);border:1px solid var(--gold);border-radius:99px;
+       padding:4px 16px;font-size:.8rem;color:#ffe9a8}
+  @media (max-width:720px){ .toc{columns:1} .rstats{flex-direction:column;gap:10px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>Camino a la Copa</h1>
+  <p><strong>Corrected Game Design &amp; Development Specification — HTML Edition</strong></p>
+  <p>Document language: English &nbsp;·&nbsp; Game languages: Spanish (default) and English</p>
+  <p>Target: HTML5 browser game · Keyboard controls · Vanilla JavaScript + Canvas 2D</p>
+  <p class="hint">Revision of the original mobile/Unity design document. All corrections are marked with gold "Correction" notes; a full change log is in <a href="#s48">Appendix A</a>.</p>
+</header>
+
+<nav class="toc">
+<ol>
+  <li><a href="#s1">Product Overview</a></li>
+  <li><a href="#s2">Target Platform</a></li>
+  <li><a href="#s3">Target Audience</a></li>
+  <li><a href="#s4">Design Principles</a></li>
+  <li><a href="#s5">Visual Direction</a></li>
+  <li><a href="#s6">Language and Localization</a></li>
+  <li><a href="#s7">Core Gameplay Loop</a></li>
+  <li><a href="#s8">Player Creation</a></li>
+  <li><a href="#s9">Player Statistics</a></li>
+  <li><a href="#s10">Match Structure</a></li>
+  <li><a href="#s11">Match Victory Rules</a></li>
+  <li><a href="#s12">Defeat and Retry Rules</a></li>
+  <li><a href="#s13">Keyboard Controls</a></li>
+  <li><a href="#s14">Core Football Mechanics</a></li>
+  <li><a href="#s15">Ability Circle System</a></li>
+  <li><a href="#s16">Ability List</a></li>
+  <li><a href="#s17">Ability Availability by Position</a></li>
+  <li><a href="#s18">Ability Data Model</a></li>
+  <li><a href="#s19">Performance Points</a></li>
+  <li><a href="#s20">Experience and Levels</a></li>
+  <li><a href="#s21">Attribute Improvement</a></li>
+  <li><a href="#s22">Tournament Structure</a></li>
+  <li><a href="#s23">Tournament Generation</a></li>
+  <li><a href="#s24">Difficulty System</a></li>
+  <li><a href="#s25">Artificial Intelligence</a></li>
+  <li><a href="#s26">Single-Player Mode</a></li>
+  <li><a href="#s27">Multiplayer (Future)</a></li>
+  <li><a href="#s28">Rewards</a></li>
+  <li><a href="#s29">Trophy System</a></li>
+  <li><a href="#s30">Screens and Visual Mockups</a></li>
+  <li><a href="#s31">Advertising Integration</a></li>
+  <li><a href="#s32">Child Safety and Privacy</a></li>
+  <li><a href="#s33">Audio Design</a></li>
+  <li><a href="#s34">Animation Requirements</a></li>
+  <li><a href="#s35">Game State Machine</a></li>
+  <li><a href="#s36">Match State Data</a></li>
+  <li><a href="#s37">Player Save Data</a></li>
+  <li><a href="#s38">Technical Architecture</a></li>
+  <li><a href="#s39">Code Modules</a></li>
+  <li><a href="#s40">Backend (Future)</a></li>
+  <li><a href="#s41">Analytics</a></li>
+  <li><a href="#s42">MVP Scope</a></li>
+  <li><a href="#s43">Development Phases</a></li>
+  <li><a href="#s44">Acceptance Criteria</a></li>
+  <li><a href="#s45">Instructions for the Coding AI</a></li>
+  <li><a href="#s46">First Technical Deliverable</a></li>
+  <li><a href="#s47">Final Product Summary</a></li>
+  <li><a href="#s48">Appendix A: Change Log</a></li>
+</ol>
+</nav>
+
+<h2 id="s1">1. Product Overview</h2>
+<h3>1.1 Working Title</h3>
+<p><strong>Camino a la Copa</strong> (English title: <em>Road to the Cup</em>). The final title may remain in Spanish in both language versions.</p>
+<h3>1.2 Game Concept</h3>
+<p>Camino a la Copa is an arcade-style football game in which the user creates and controls <strong>one individual footballer</strong>. The player selects a name, appearance, country/team, shirt number, and playing position, then competes in an elimination tournament.</p>
+<p>During matches, special <strong>ability circles</strong> appear on the pitch. Moving over a circle adds its ability to the player's inventory (maximum 5 stored). Abilities are activated strategically with the keyboard.</p>
+<p>The team that scores the most goals wins. Winning advances the player to the next round; losing repeats <em>only the current match</em>. Level, statistics, unlocked equipment, and progression are always preserved. Winning the final grants a trophy and unlocks a new, harder tournament. The tournament sequence is infinite.</p>
+
+<h2 id="s2">2. Target Platform</h2>
+<div class="fix"><b>Correction:</b> the original document targeted Android/iOS (touch) first with Unity. This edition targets an <strong>HTML5 browser game with keyboard controls</strong>, because the game will be implemented directly in HTML/JavaScript.</div>
+<h3>2.1 Primary Platform</h3>
+<ul>
+  <li>Web browser (desktop): Chrome, Firefox, Safari, Edge</li>
+  <li>Input: keyboard (see <a href="#s13">§13</a>); mouse only for menus (optional)</li>
+  <li>Presentation: landscape 16:9 canvas that scales responsively to the window</li>
+  <li>Distribution: static files (no build step required); playable offline once loaded</li>
+</ul>
+<h3>2.2 Possible Future Platforms</h3>
+<ul>
+  <li>Mobile browsers / installable PWA (would reintroduce touch controls: virtual joystick + buttons)</li>
+  <li>Desktop wrappers (Electron/Tauri), Steam</li>
+  <li>Gamepad support via the Gamepad API</li>
+</ul>
+<p>The input layer must be isolated (see <a href="#s39">§39</a>) so keyboard input can later be supplemented by touch or gamepad without rewriting gameplay code.</p>
+
+<h2 id="s3">3. Target Audience</h2>
+<p><strong>Primary:</strong> children approximately 7–14, casual football fans, players who enjoy short matches and progression systems.</p>
+<p><strong>Secondary:</strong> families, teenagers, casual players, players who prefer arcade football over realistic simulation.</p>
+<p>Visual design, controls, text, and menus must remain easy to understand for younger users. Keyboard controls must use few keys and be shown on screen at all times.</p>
+
+<h2 id="s4">4. Design Principles</h2>
+<ol>
+  <li>Easy to learn.</li>
+  <li>Short and exciting matches.</li>
+  <li>Simple controls — the whole game is playable with arrows + 3 action keys + number keys.</li>
+  <li>Clear visual feedback.</li>
+  <li>Progression after every match.</li>
+  <li>No loss of permanent progress, ever.</li>
+  <li>Abilities add strategy without confusion.</li>
+  <li>Competitive but child-friendly.</li>
+  <li>The player always understands what to do next.</li>
+  <li>Minimal text in menus and interfaces.</li>
+</ol>
+
+<h2 id="s5">5. Visual Direction</h2>
+<div class="fix"><b>Correction:</b> the original recommended stylized 3D characters with a third-person 3D camera. That is not feasible or necessary for a vanilla Canvas 2D game. The chosen direction is <strong>"Modern 2D arcade"</strong>: the mockups' Style A interface with a top-down 2D pitch.</div>
+<h3>5.1 Visual Style</h3>
+<ul>
+  <li><strong>Top-down 2D pitch</strong> rendered on Canvas: green striped grass, white line markings, goals at left/right.</li>
+  <li><strong>Flat stylized players</strong>: colored circular/capsule tokens with shirt number, team color, and facing direction; the controlled player has a bright ring highlight.</li>
+  <li>Exaggerated ability effects: glow rings, trails, screen flashes — clear and rewarding for children.</li>
+  <li>Friendly, energetic tone; no attempt at realism.</li>
+</ul>
+<h3>5.2 Interface Style (matches the mockups in <a href="#s30">§30</a>)</h3>
+<ul>
+  <li>Dark blue backgrounds (<code>#081226</code> family), bright blue interface elements (<code>#3b82f6</code>/<code>#38bdf8</code>)</li>
+  <li>Gold (<code>#f5c542</code>) for tournaments, trophies, and the selected menu item</li>
+  <li>Green (<code>#34d399</code>) for progress and successful actions; red only for negative events</li>
+  <li>Large circular ability icons; rounded buttons; high-contrast text</li>
+  <li>UI screens are DOM/CSS overlays; only the match itself is Canvas</li>
+</ul>
+<h3>5.3 Character Style</h3>
+<p>Players are drawn as stylized 2D tokens (head + shirt in menus; top-down token in matches). Customization changes skin tone, hair color, shirt style/colors, and number — all drawn procedurally (no art assets required for the MVP).</p>
+<h3>5.4 Camera</h3>
+<div class="fix"><b>Correction:</b> replaces the 3D "third-person elevated camera".</div>
+<p>A 2D scrolling camera follows the controlled player, keeping the ball inside view whenever possible (the camera targets a weighted point between player and ball). The full pitch does not need to fit on screen; a minimap is optional and post-MVP.</p>
+
+<h2 id="s6">6. Language and Localization</h2>
+<h3>6.1 Supported Languages</h3>
+<p>Spanish (default) and English. On first launch the game starts in Spanish; the user may switch languages in Settings. The selection is saved in <code>localStorage</code>.</p>
+<h3>6.2 Localization Requirements</h3>
+<p>No interface text may be hard-coded. All visible text uses localization keys resolved from JSON dictionaries:</p>
+<pre><code>{
+  "menu.play":       { "es": "Jugar",      "en": "Play" },
+  "menu.player":     { "es": "Mi jugador", "en": "My Player" },
+  "menu.tournament": { "es": "Torneo",     "en": "Tournament" }
+}</code></pre>
+<h3>6.3 Main Terminology</h3>
+<table>
+<tr><th>Key</th><th>Spanish</th><th>English</th></tr>
+<tr><td>play</td><td>Jugar</td><td>Play</td></tr>
+<tr><td>player</td><td>Mi jugador</td><td>My Player</td></tr>
+<tr><td>tournament</td><td>Torneo</td><td>Tournament</td></tr>
+<tr><td>trophies</td><td>Trofeos</td><td>Trophies</td></tr>
+<tr><td>settings</td><td>Ajustes</td><td>Settings</td></tr>
+<tr><td>goalkeeper</td><td>Portero</td><td>Goalkeeper</td></tr>
+<tr><td>defender</td><td>Defensa</td><td>Defender</td></tr>
+<tr><td>midfielder</td><td>Mediocampista</td><td>Midfielder</td></tr>
+<tr><td>forward</td><td>Delantero</td><td>Forward</td></tr>
+<tr><td>speed</td><td>Velocidad</td><td>Speed</td></tr>
+<tr><td>dribble</td><td>Regate</td><td>Dribble</td></tr>
+<tr><td>tackle</td><td>Entrada</td><td>Tackle</td></tr>
+<tr><td>super_save</td><td>Paradón</td><td>Super Save</td></tr>
+<tr><td>bicycle_kick</td><td>Chilenita</td><td>Bicycle Kick</td></tr>
+<tr><td>victory</td><td>Victoria</td><td>Victory</td></tr>
+<tr><td>defeat</td><td>Derrota</td><td>Defeat</td></tr>
+<tr><td>hydration_break</td><td>Pausa de hidratación</td><td>Hydration Break</td></tr>
+<tr><td>rematch</td><td>Repetir partido</td><td>Replay Match</td></tr>
+<tr><td>next_round</td><td>Siguiente ronda</td><td>Next Round</td></tr>
+<tr><td>final</td><td>Final</td><td>Final</td></tr>
+<tr><td>cup</td><td>Copa</td><td>Cup</td></tr>
+</table>
+<p>Special rule: <em>Chilenita</em> is shown as <em>Bicycle Kick</em> in English. Internal identifier: <code>ABILITY_BICYCLE_KICK</code>.</p>
+
+<h2 id="s7">7. Core Gameplay Loop</h2>
+<pre><code>Open game
+→ Select or create player
+→ View tournament and next opponent
+→ Play match (keyboard)
+→ Win or lose
+→ Receive experience and rewards
+→ Advance (win) or replay the same match (lose)
+→ Reach and win the final
+→ Receive trophy
+→ Unlock harder tournament
+→ Continue indefinitely</code></pre>
+
+<h2 id="s8">8. Player Creation</h2>
+<h3>8.1 Required Player Data</h3>
+<p>Name, appearance, country/team, shirt number, position.</p>
+<h3>8.2 Character Customization</h3>
+<p><span class="tag mvp">MVP</span> skin tone, hair color, shirt style, shirt number.<br>
+<span class="tag post">Post-MVP</span> hair styles, face types, boots, gloves, wristbands, celebrations, accessories.</p>
+<h3>8.3 Playing Positions</h3>
+<p>Goalkeeper, Defender, Midfielder, Forward. The user controls only one footballer for the entire match and can never switch to another footballer.</p>
+<h3>8.4 Position Primary Attributes</h3>
+<table>
+<tr><th>Position</th><th>Primary attributes</th></tr>
+<tr><td>Goalkeeper</td><td>Reflexes, positioning, goalkeeping (catch/dive), long distribution</td></tr>
+<tr><td>Defender</td><td>Tackling, strength, positioning (interception), speed</td></tr>
+<tr><td>Midfielder</td><td>Passing, dribbling (control), stamina, positioning (vision)</td></tr>
+<tr><td>Forward</td><td>Shooting, speed, dribbling, positioning (finishing)</td></tr>
+</table>
+
+<h2 id="s9">9. Player Statistics</h2>
+<p>Core statistics, each ranged <strong>1–100</strong>:</p>
+<p><code>speed</code>, <code>acceleration</code>, <code>shooting</code>, <code>passing</code>, <code>dribbling</code>, <code>tackling</code>, <code>strength</code>, <code>stamina</code>, <code>positioning</code>, <code>reflexes</code>, <code>goalkeeping</code></p>
+<p>Statistics influence gameplay but must not make low-level players unusable (effects are scaled, never gating).</p>
+
+<h2 id="s10">10. Match Structure</h2>
+<div class="fix"><b>Correction:</b> the original §10.3 timeline was internally inconsistent (it summed to 12:00 of "match time" while requiring 10 playable minutes, and the mockup HUD showed a clock of <code>07:32</code>, impossible within a 5-minute half). The model below is the single source of truth.</div>
+<h3>10.1 Timing Model</h3>
+<ul>
+  <li><strong>Playable time: 10 minutes total</strong> — two halves of 5:00 playable each.</li>
+  <li>The match clock counts <strong>up from 0:00 to 5:00 within each half</strong>, with a half indicator (<code>1T</code>/<code>2T</code> in Spanish, <code>1H</code>/<code>2H</code> in English). It can never display more than 5:00.</li>
+  <li><strong>One hydration break per half</strong>, triggered at 2:30 of playable time in that half, lasting 1:00 of real time. The match clock and all gameplay are fully frozen.</li>
+  <li>Half-time break between halves (15 seconds by default, skippable with <kbd>Enter</kbd>).</li>
+</ul>
+<h3>10.2 Wall-Clock Timeline (informative)</h3>
+<table>
+<tr><th>Real time</th><th>Phase</th><th>Match clock</th></tr>
+<tr><td>00:00–02:30</td><td>First half (part 1)</td><td>1T 0:00 → 2:30 (running)</td></tr>
+<tr><td>02:30–03:30</td><td>Hydration break 1</td><td>1T 2:30 (frozen)</td></tr>
+<tr><td>03:30–06:00</td><td>First half (part 2)</td><td>1T 2:30 → 5:00 (running)</td></tr>
+<tr><td>06:00–06:15</td><td>Half-time</td><td>frozen</td></tr>
+<tr><td>06:15–08:45</td><td>Second half (part 1)</td><td>2T 0:00 → 2:30 (running)</td></tr>
+<tr><td>08:45–09:45</td><td>Hydration break 2</td><td>2T 2:30 (frozen)</td></tr>
+<tr><td>09:45–12:15</td><td>Second half (part 2)</td><td>2T 2:30 → 5:00 (running)</td></tr>
+</table>
+<p>Total playable time: exactly 10:00. Total real duration: ≈ 12:15. Breaks never consume playable time.</p>
+<h3>10.3 Match Clock Rules</h3>
+<p>The clock pauses during hydration breaks, half-time, goals/kick-off cinematics, and when the game is paused (<kbd>P</kbd>/<kbd>Esc</kbd>). It continues during normal stoppages (throw-ins, corners, goal kicks). All timing values live in the configuration file and are shortenable for testing.</p>
+
+<h2 id="s11">11. Match Victory Rules</h2>
+<p>The winner is the team with the most goals at full time. Individual performance points never determine the winner.</p>
+<h3>11.1 Draws</h3>
+<div class="fix"><b>Correction:</b> the original recommended extra time (2×1 min) plus a penalty shootout for the first version. For the HTML MVP the document's own simplified alternative is adopted: <strong>an immediate penalty shootout after a draw</strong>. Extra time is deferred to post-MVP.</div>
+<ul>
+  <li><span class="tag mvp">MVP</span> On a draw, go directly to a penalty shootout: 5 kicks per team, then sudden death.
+    <ul>
+      <li>Shooting: <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd> choose corner, <kbd>X</kbd> shoots (a moving power gauge sets accuracy).</li>
+      <li>Saving: <kbd>←</kbd>/<kbd>→</kbd>/<kbd>↑</kbd> choose dive at the moment the AI shoots.</li>
+      <li>The user takes their team's kicks and defends in goal regardless of position (arcade rule, keeps every position engaged).</li>
+    </ul>
+  </li>
+  <li><span class="tag post">Post-MVP</span> Two 1-minute extra-time periods (no hydration breaks) before penalties.</li>
+</ul>
+
+<h2 id="s12">12. Defeat and Retry Rules</h2>
+<p>If the player loses: only the current match is repeated, against the same opponent in the same round. The tournament never restarts. Character level, statistics, experience, equipment, celebrations, and earned trophies are all preserved. The game may subtly ease difficulty after several consecutive defeats (see <a href="#s24">§24.1</a>).</p>
+
+<h2 id="s13">13. Keyboard Controls</h2>
+<div class="fix"><b>Correction:</b> replaces the touch scheme (virtual joystick + on-screen buttons) and fixes the mockup's controls table, which listed "Jump" and "Chilenita" as base controls. The bicycle kick is not a base control — it is triggered by activating the <code>ABILITY_BICYCLE_KICK</code> inventory slot when conditions are valid (<a href="#s16">§16.5</a>). Jump/header is post-MVP.</div>
+<h3>13.1 Control Profiles</h3>
+<p>Two built-in profiles, selectable in Settings (default: Arrows). All bindings live in a config map to allow future remapping.</p>
+<table>
+<tr><th>Action</th><th>Profile A — Arrows (default)</th><th>Profile B — WASD</th><th>Notes</th></tr>
+<tr><td>Move</td><td><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></td><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>8-directional</td></tr>
+<tr><td>Sprint</td><td><kbd>Shift</kbd> (hold)</td><td><kbd>Shift</kbd> (hold)</td><td>Drains stamina</td></tr>
+<tr><td>Action 1 — Pass / context</td><td><kbd>Z</kbd></td><td><kbd>J</kbd></td><td>See §13.2</td></tr>
+<tr><td>Action 2 — Shoot / Tackle</td><td><kbd>X</kbd></td><td><kbd>K</kbd></td><td>Hold to charge shot power</td></tr>
+<tr><td>Request pass (off the ball)</td><td><kbd>C</kbd></td><td><kbd>L</kbd></td><td>Asks AI teammate to pass</td></tr>
+<tr><td>Activate ability slot 1–5</td><td><kbd>1</kbd>–<kbd>5</kbd></td><td><kbd>1</kbd>–<kbd>5</kbd></td><td>Matches HUD slots</td></tr>
+<tr><td>Pause</td><td><kbd>P</kbd> or <kbd>Esc</kbd></td><td><kbd>P</kbd> or <kbd>Esc</kbd></td><td></td></tr>
+<tr><td>Menu navigation</td><td><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> + <kbd>Enter</kbd> / <kbd>Esc</kbd></td><td>same</td><td>Mouse optional</td></tr>
+</table>
+<h3>13.2 Context-Sensitive Actions</h3>
+<p>The two action keys change meaning by situation; the HUD key legend always shows the current meaning.</p>
+<table>
+<tr><th>Situation</th><th>Action 1 (<kbd>Z</kbd>)</th><th>Action 2 (<kbd>X</kbd>)</th></tr>
+<tr><td>Has the ball</td><td>Pass (to nearest teammate in facing direction)</td><td>Shoot (hold = power)</td></tr>
+<tr><td>Defending (opponent has ball)</td><td>Pressure (close down)</td><td>Tackle</td></tr>
+<tr><td>Near loose ball</td><td>Recover / take ball</td><td>Tackle</td></tr>
+<tr><td>Goalkeeper, ball incoming</td><td>Catch</td><td>Dive/Punch (+direction = dive side)</td></tr>
+<tr><td>Goalkeeper, has the ball</td><td>Short pass</td><td>Long kick (hold = power)</td></tr>
+</table>
+<h3>13.3 Goalkeeper Play</h3>
+<p>Same movement keys; the goalkeeper is confined near their area when the ball is far (AI-assisted positioning) and gains full control as the ball approaches. Dives use <kbd>X</kbd> plus a direction key; <kbd>Z</kbd> attempts a catch.</p>
+
+<h2 id="s14">14. Core Football Mechanics</h2>
+<p><span class="tag mvp">MVP</span> running, sprinting (stamina), possession, passing, shooting with power charge, tackling, interception, goalkeeping, goal detection, out-of-bounds → throw-ins, corners, goal kicks (simplified: quick AI restart).</p>
+<p><span class="tag post">Post-MVP</span> fouls and cards, offside, headers/aerial play beyond the bicycle kick.</p>
+<div class="note">Simplification confirmed from the original: the first version excludes offside and complex fouls. Performance-point entries that depend on cards/fouls (<a href="#s19">§19</a>) stay defined in config but are inactive until fouls exist.</div>
+
+<h2 id="s15">15. Ability Circle System</h2>
+<h3>15.1 General Behavior</h3>
+<p>Ability circles appear on the pitch during play. Each has a unique icon and color, glows, is collected by moving over it, disappears on collection, and respawns later elsewhere.</p>
+<h3>15.2 Collection Flow</h3>
+<pre><code>Circle appears → player moves over it → ability added to inventory
+→ HUD slot fills (keys 1–5) → player presses slot key → effect occurs
+→ ability removed from inventory</code></pre>
+<h3>15.3 Inventory Limit</h3>
+<p>Maximum <strong>5 stored abilities</strong>. While the inventory is full, new circles cannot be collected (walking over them does nothing except a brief "inventory full" flash). This is the simplest rule for children and is the confirmed MVP behavior.</p>
+<h3>15.4 Pitch Coordinate System and Spawn Rules</h3>
+<div class="fix"><b>Correction:</b> the original gave spawn distances in meters with no pitch scale. The pitch is now defined as a <strong>105 × 68 unit</strong> logical coordinate system (1 unit = 1 m), rendered to canvas via a single scale factor. All distance rules use these units.</div>
+<ul>
+  <li>Spawn only in valid playable areas: never inside goals, never outside the pitch, never within 3 units of a player, never inside either penalty area (except goalkeeper-weighted abilities, which may spawn inside the user's own penalty area when the user is the goalkeeper).</li>
+  <li>Spawns must not repeatedly favor one team: alternate spawn halves with light randomization.</li>
+  <li>More powerful abilities are rarer (spawn weights, §17–18).</li>
+</ul>
+<h3>15.5 Spawn Configuration (all values in config)</h3>
+<table>
+<tr><th>Parameter</th><th>Default</th></tr>
+<tr><td>Maximum active circles</td><td>3</td></tr>
+<tr><td>Initial spawn delay</td><td>20 s</td></tr>
+<tr><td>Respawn interval</td><td>20–40 s (random)</td></tr>
+<tr><td>Circle lifetime</td><td>20 s (fades out)</td></tr>
+<tr><td>Minimum distance between circles</td><td>12 units</td></tr>
+</table>
+
+<h2 id="s16">16. Ability List</h2>
+<table>
+<tr><th>ID</th><th>Spanish</th><th>English</th><th>Effect</th><th>Type</th><th>Color</th></tr>
+<tr><td><code>ABILITY_SPEED</code></td><td>Velocidad</td><td>Speed</td><td>+ movement speed and acceleration</td><td>5 s duration</td><td>Cyan</td></tr>
+<tr><td><code>ABILITY_DRIBBLE</code></td><td>Regate</td><td>Dribble</td><td>Better ball control, lower possession-loss chance, faster turns</td><td>5 s duration</td><td>Green</td></tr>
+<tr><td><code>ABILITY_TACKLE</code></td><td>Entrada</td><td>Tackle</td><td>+ tackle effectiveness and range, faster recovery on miss</td><td>5 s duration</td><td>Orange</td></tr>
+<tr><td><code>ABILITY_SUPER_SAVE</code></td><td>Paradón</td><td>Super Save</td><td>+ goalkeeper reaction speed, save range, catch probability</td><td>5 s duration</td><td>Purple</td></tr>
+<tr><td><code>ABILITY_BICYCLE_KICK</code></td><td>Chilenita</td><td>Bicycle Kick</td><td>Spectacular high-power, high-accuracy shot on an aerial ball; special animation/effect</td><td>Single use (conditional)</td><td>Red</td></tr>
+<tr><td><code>ABILITY_SUPER_SHOT</code></td><td>Supertiro</td><td>Super Shot</td><td>Next shot: + power and accuracy</td><td>Single use (1 shot)</td><td>Gold</td></tr>
+<tr><td><code>ABILITY_PERFECT_PASS</code></td><td>Pase perfecto</td><td>Perfect Pass</td><td>Next pass: near-perfect accuracy</td><td>Single use (1 pass)</td><td>Blue</td></tr>
+<tr><td><code>ABILITY_SHIELD</code></td><td>Escudo</td><td>Shield</td><td>Cannot lose the ball to tackles</td><td>5 s duration</td><td>Silver</td></tr>
+<tr><td><code>ABILITY_STAMINA</code></td><td>Resistencia</td><td>Stamina</td><td>No stamina drain; restores part of the bar</td><td>5 s duration</td><td>Lime</td></tr>
+</table>
+<h3>16.5 Bicycle Kick Activation Conditions</h3>
+<p>Pressing its slot key performs the bicycle kick only if <em>all</em> conditions hold:</p>
+<ul>
+  <li>Player is near the opponent's goal (configurable radius),</li>
+  <li>the ball is airborne above a minimum height (2D model: the ball has a simulated height value from lofted passes/clearances/crosses),</li>
+  <li>the player is correctly positioned relative to the ball,</li>
+  <li>no blocking animation is active.</li>
+</ul>
+<p><strong>If conditions are not met, the ability is NOT consumed</strong> and a short message is shown —
+ES: <em>«Acércate a un balón aéreo para usar la chilenita.»</em> ·
+EN: <em>“Move near an aerial ball to use the bicycle kick.”</em></p>
+
+<h2 id="s17">17. Ability Availability by Position</h2>
+<div class="fix"><b>Correction:</b> the original used a Yes/Limited/No table that contradicted its own JSON example (the table allowed Bicycle Kick as "Limited" for Defenders, but the JSON's <code>allowedPositions</code> excluded them). Both are replaced by one mechanism: <strong>per-position spawn weights</strong> (0 = never appears, low = rare, high = common). The table below is the single source of truth and is stored directly in each ability's config.</div>
+<table>
+<tr><th>Ability</th><th>Goalkeeper</th><th>Defender</th><th>Midfielder</th><th>Forward</th></tr>
+<tr><td>Speed</td><td>10</td><td>10</td><td>10</td><td>10</td></tr>
+<tr><td>Dribble</td><td>3</td><td>10</td><td>10</td><td>10</td></tr>
+<tr><td>Tackle</td><td>3</td><td>10</td><td>10</td><td>3</td></tr>
+<tr><td>Super Save</td><td>12</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Bicycle Kick</td><td>0</td><td>2</td><td>5</td><td>6</td></tr>
+<tr><td>Super Shot</td><td>0</td><td>2</td><td>6</td><td>8</td></tr>
+<tr><td>Perfect Pass</td><td>4</td><td>8</td><td>10</td><td>8</td></tr>
+<tr><td>Shield</td><td>6</td><td>8</td><td>8</td><td>8</td></tr>
+<tr><td>Stamina</td><td>6</td><td>8</td><td>8</td><td>8</td></tr>
+</table>
+
+<h2 id="s18">18. Ability Data Model</h2>
+<pre><code>{
+  "id": "ABILITY_BICYCLE_KICK",
+  "localizationKey": "ability.bicycle_kick",
+  "icon": "icon_bicycle_kick",
+  "category": "OFFENSIVE",
+  "activationType": "CONDITIONAL_SINGLE_USE",
+  "durationSeconds": 0,
+  "maximumStack": 1,
+  "positionSpawnWeights": {
+    "GOALKEEPER": 0,
+    "DEFENDER": 2,
+    "MIDFIELDER": 5,
+    "FORWARD": 6
+  },
+  "minimumTournamentLevel": 1
+}</code></pre>
+<p><code>activationType</code> ∈ <code>TIMED</code> (durationSeconds &gt; 0), <code>SINGLE_USE</code> (next matching action), <code>CONDITIONAL_SINGLE_USE</code> (consumed only on successful activation).</p>
+
+<h2 id="s19">19. Performance Points</h2>
+<p>Performance points never decide the match winner. They feed experience, match rating, rewards, and statistics.</p>
+<table>
+<tr><th>Action</th><th>Points</th><th>MVP</th></tr>
+<tr><td>Goal</td><td>100</td><td>Yes</td></tr>
+<tr><td>Assist</td><td>50</td><td>Yes</td></tr>
+<tr><td>Successful pass</td><td>5</td><td>Yes</td></tr>
+<tr><td>Key pass</td><td>15</td><td>Yes</td></tr>
+<tr><td>Ball recovery</td><td>10</td><td>Yes</td></tr>
+<tr><td>Successful tackle</td><td>15</td><td>Yes</td></tr>
+<tr><td>Interception</td><td>10</td><td>Yes</td></tr>
+<tr><td>Save</td><td>20</td><td>Yes</td></tr>
+<tr><td>Super save (with ability active)</td><td>40</td><td>Yes</td></tr>
+<tr><td>Successful dribble</td><td>10</td><td>Yes</td></tr>
+<tr><td>Shot on target</td><td>10</td><td>Yes</td></tr>
+<tr><td>Match victory</td><td>200</td><td>Yes</td></tr>
+<tr><td>Clean sheet</td><td>75</td><td>Yes</td></tr>
+<tr><td>Foul</td><td>−10</td><td>Defined, inactive until fouls exist</td></tr>
+<tr><td>Yellow card</td><td>−25</td><td>Defined, inactive</td></tr>
+<tr><td>Red card</td><td>−75</td><td>Defined, inactive</td></tr>
+<tr><td>Own goal</td><td>−50</td><td>Yes</td></tr>
+</table>
+<h3>19.2 Match Rating</h3>
+<p>Scale 1.0–10.0, computed from position-appropriate contributions (goals, assists, passing, defense, goalkeeping, result). A goalkeeper is never penalized for not scoring — each position has its own rating weights in config.</p>
+
+<h2 id="s20">20. Experience and Levels</h2>
+<p>Experience sources: match completion, victory, goals, assists, saves, tackles, tournament progression, winning the final. <strong>Level and experience are permanent — never lost on defeat.</strong></p>
+<h3>20.4 Experience Formula (all values in config)</h3>
+<pre><code>matchXP = 100                       // base, always granted
+        + 100 × isVictory
+        + performancePoints × 0.20
+        + roundNumber × 25          // round 1 = quarter-final
+        + 500 × isFinalVictory</code></pre>
+<p>Level curve: XP required for level <em>n</em> → <em>n+1</em> = <code>100 × n</code> (configurable). Level rewards: attribute points, and at milestone levels equipment/celebrations (§28).</p>
+
+<h2 id="s21">21. Attribute Improvement</h2>
+<p>On level-up the player receives <strong>2 attribute points</strong> (config: 1–3) to assign manually. Position-primary attributes cost 1 point per +1; all others cost 2 points per +1 (e.g., Shooting is cheap for forwards, Reflexes for goalkeepers, Tackling for defenders, Passing for midfielders).</p>
+
+<h2 id="s22">22. Tournament Structure</h2>
+<h3>22.1 MVP Tournament</h3>
+<p>Three rounds: <strong>Quarter-final → Semi-final → Final</strong>.</p>
+<div class="fix"><b>Correction:</b> the original MVP scope said "two teams", which cannot supply three distinct opponents for three rounds. Corrected MVP content: the player's team plus an <strong>opponent pool of 4 AI teams</strong>; each round draws a different opponent from the pool (2 teams on the pitch per match). The full version keeps a wider pool and 5 rounds (Qualification, Round of 16, Quarter-final, Semi-final, Final).</div>
+<h3>22.2 Progression Rules</h3>
+<ol>
+  <li>Win → advance to the next round.</li>
+  <li>Lose → replay the current match (same opponent).</li>
+  <li>Win the final → trophy + unlock the next, harder tournament.</li>
+</ol>
+<h3>22.3 Infinite Tournaments</h3>
+<div class="fix"><b>Correction:</b> the original formula "1 + logarithm(tournamentNumber + 1) × 0.20" did not specify the logarithm base. It is the <strong>natural logarithm</strong>.</div>
+<pre><code>difficultyMultiplier = 1 + ln(tournamentNumber + 1) × 0.20
+// T1 ≈ 1.14, T2 ≈ 1.22, T5 ≈ 1.36, T10 ≈ 1.48, T50 ≈ 1.79</code></pre>
+<p>The curve grows without bound but slowly, so later tournaments stay difficult yet possible. Each new tournament varies opponents, stadium theme (canvas palette), reward tier, and ability-spawn tuning.</p>
+
+<h2 id="s23">23. Tournament Generation</h2>
+<pre><code>{
+  "tournamentNumber": 8,
+  "displayNameKey": "tournament.generated",
+  "rounds": 3,
+  "difficultyMultiplier": 1.44,
+  "rewardTier": 8,
+  "stadiumTheme": "NIGHT_STADIUM",
+  "opponents": ["team_france", "team_germany", "team_brazil"],
+  "completed": false
+}</code></pre>
+<p>Opponent selection considers tournament difficulty, player level, previous results, the team pool, and repetition limits (the same opponent should not appear in consecutive tournaments' same round).</p>
+
+<h2 id="s24">24. Difficulty System</h2>
+<p>Difficulty scales AI quality, not raw physics: opponent decision speed, passing/shooting accuracy, goalkeeper reactions, defensive positioning, pressing intensity, ability usage, recovery speed. Opponents must never get unrealistic physical advantages.</p>
+<h3>24.1 Dynamic Assistance (hidden, configurable)</h3>
+<p>After repeated missed shots → slightly improved shot accuracy; after several defeats → easier opponent goalkeeper, more favorable ability spawns, reduced pressure, better teammate support. Subtle, capped, and resettable.</p>
+
+<h2 id="s25">25. Artificial Intelligence</h2>
+<p>All 21 other footballers are AI-controlled. Requirements per role:</p>
+<ul>
+  <li><strong>Team AI:</strong> attack/defense/transition states, ball recovery, support runs, passing, shooting, position-based behavior.</li>
+  <li><strong>Goalkeeper AI:</strong> track ball, hold position by shooting angle, dive, catch, punch, rush out, distribute.</li>
+  <li><strong>Defender AI:</strong> keep shape, mark, intercept, cover, tackle, clear danger.</li>
+  <li><strong>Midfielder AI:</strong> offer passing options, control center, recover, connect defense–attack.</li>
+  <li><strong>Forward AI:</strong> attacking runs, find space, shoot, press, position for rebounds.</li>
+  <li><strong>User support:</strong> teammates continue play sensibly when the user is off the ball; a subtle indicator suggests positioning; <kbd>C</kbd> requests a pass. The user must never feel disconnected from the action.</li>
+</ul>
+<p>Implementation: lightweight state machines + weighted target positions per role and game phase — no pathfinding library needed on an open pitch.</p>
+
+<h2 id="s26">26. Single-Player Mode</h2>
+<p>Matches vs AI, infinite tournaments, player development, unlocks, trophies. Fully offline: the game is static HTML/JS/CSS with <code>localStorage</code> persistence — no server required.</p>
+
+<h2 id="s27">27. Multiplayer <span class="tag post">Future</span></h2>
+<p>Unchanged in concept, deferred entirely out of the MVP: 1-vs-1 controlled-player mode with AI teammates, matchmaking by level, same match structure. Requires backend (§40), authentication, synchronization (WebSocket/WebRTC), reconnection, anti-cheat, safe usernames, parental protections. Online defeat never removes permanent progression. The offline game must be built so multiplayer can be added without refactoring match logic (deterministic, event-driven match engine).</p>
+
+<h2 id="s28">28. Rewards</h2>
+<p>Confirmed reward types: <strong>equipment</strong> (shirts, kits, boots, gloves — cosmetic only, never pay-to-win) and <strong>special celebrations</strong> (knee slide, backflip, dance, bicycle-kick pose…). Sources: level-ups, tournament victories, trophy milestones; later: challenges, daily objectives, events.</p>
+<p><span class="tag mvp">MVP</span> one unlockable kit variant + one unlockable celebration (shown as text/simple animation on the trophy screen).</p>
+
+<h2 id="s29">29. Trophy System</h2>
+<p>Each completed tournament grants a trophy. Trophy room displays: total trophies, tournament number, completion date, difficulty, final opponent, final result.</p>
+<p>Visual tiers cycle with upgrades (stars/frames) since tournaments are infinite:</p>
+<table>
+<tr><th>Tier</th><th>Tournaments</th></tr>
+<tr><td>🥉 Bronze</td><td>1–2</td></tr>
+<tr><td>🥈 Silver</td><td>3–5</td></tr>
+<tr><td>🏆 Gold</td><td>6–9</td></tr>
+<tr><td>🏆✨ Champion</td><td>10–19</td></tr>
+<tr><td>👑 Legend</td><td>20+ (adds stars per 10)</td></tr>
+</table>
+
+<h2 id="s30">30. Screens and Visual Mockups</h2>
+<div class="fix"><b>Correction:</b> the original mockup sheet showed three alternatives per screen and touch-based controls. One alternative is now chosen per screen (Style A "Moderno" for menus, Style B linear path for the tournament — the option the original document itself recommended) and every mockup is redrawn for <strong>keyboard input</strong>: key-cap hints replace the joystick and touch buttons, and the match HUD clock respects the 5:00-per-half rule from §10. Mockups below are shown in Spanish (the default game language); every string comes from a localization key.</div>
+
+<h3>30.1 Screen List</h3>
+<ol>
+  <li><strong>Splash / Boot</strong> — logo, loading, language init, save load</li>
+  <li><strong>Main menu</strong> (mockup A)</li>
+  <li><strong>Player creation</strong> (mockup B)</li>
+  <li><strong>Tournament path</strong> (mockup C)</li>
+  <li><strong>Pre-match</strong> — both teams, position, difficulty, stadium, <kbd>Enter</kbd> to start</li>
+  <li><strong>Match / gameplay HUD</strong> (mockup D)</li>
+  <li><strong>Hydration break</strong> (mockup E)</li>
+  <li><strong>Half-time</strong> — score, basic stats, countdown, <kbd>Enter</kbd> to skip</li>
+  <li><strong>Match result</strong> (mockup F)</li>
+  <li><strong>Trophy</strong> (mockup G)</li>
+  <li><strong>Settings</strong> — language, control profile, audio volumes</li>
+</ol>
+
+<h3>30.2 Mockup A — Main Menu (Style "Moderno")</h3>
+<div class="mock">
+  <div class="mock-title">Main menu · keyboard navigation · selected item highlighted in gold</div>
+  <div class="screen">
+    <div class="menu-side">
+      <div class="btn sel">JUGAR</div>
+      <div class="btn">MI JUGADOR</div>
+      <div class="btn">TORNEO</div>
+      <div class="btn">TROFEOS</div>
+      <div class="btn">AJUSTES</div>
+    </div>
+    <div class="menu-logo">
+      <div class="ball">⚽</div>
+      <div class="name">CAMINO A LA COPA</div>
+      <div class="hint">Torneo 3 · Nivel 9</div>
+    </div>
+    <div class="menu-hint hint"><kbd>↑</kbd><kbd>↓</kbd> navegar &nbsp;·&nbsp; <kbd>Enter</kbd> elegir</div>
+  </div>
+</div>
+
+<h3>30.3 Mockup B — Player Creation</h3>
+<div class="mock">
+  <div class="mock-title">Player creation · 2D avatar preview · ←/→ cycles values of the selected field</div>
+  <div class="screen">
+    <div class="create-grid">
+      <div class="avatar-box">
+        <div class="avatar">
+          <div class="head"></div>
+          <div class="shirt">10</div>
+          <div class="shorts"></div>
+        </div>
+        <div class="hint">Vista previa</div>
+      </div>
+      <div class="form-box">
+        <div class="field"><label>NOMBRE</label><span class="val">Alexis</span></div>
+        <div class="field sel"><label>PAÍS</label><span class="arr">◀</span><span class="val">Argentina</span><span class="arr">▶</span></div>
+        <div class="field"><label>POSICIÓN</label><span class="arr">◀</span><span class="val">Delantero</span><span class="arr">▶</span></div>
+        <div class="field"><label>DORSAL</label><span class="arr">◀</span><span class="val">10</span><span class="arr">▶</span></div>
+        <div class="field"><label>ASPECTO</label><span class="arr">◀</span><span class="val">Piel · Pelo · Camiseta</span><span class="arr">▶</span></div>
+        <div class="btnrow"><div class="btn primary">CONTINUAR &nbsp;<span class="hint">(Enter)</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>30.4 Mockup C — Tournament Path (Style "Lineal")</h3>
+<p>A vertical linear path (recommended over a bracket — clearer for children and narrow screens). Completed rounds in green, current round highlighted in gold, future rounds locked.</p>
+<div class="mock">
+  <div class="mock-title">Tournament screen · Torneo 3 · linear path, bottom to top</div>
+  <div class="screen">
+    <div class="path">
+      <div class="menu-hint hint" style="position:static;margin-bottom:8px"><kbd>Enter</kbd> jugar siguiente partido</div>
+      <div class="round done"><span class="st">✔</span> CUARTOS DE FINAL <span class="who">vs Uruguay · 2–1</span></div>
+      <div class="connector"></div>
+      <div class="round cur"><span class="st">▶</span> SEMIFINAL <span class="who">vs Brasil · Dificultad ★★☆</span></div>
+      <div class="connector"></div>
+      <div class="round lock"><span class="st">🔒</span> FINAL <span class="who">—</span></div>
+      <div class="path-cup">🏆</div>
+    </div>
+  </div>
+</div>
+
+<h3>30.5 Mockup D — Match HUD</h3>
+<p>Top-down Canvas pitch. Note the corrected clock (<code>1T 02:14</code>, counts 0:00→5:00 per half), ability slots bound to <kbd>1</kbd>–<kbd>5</kbd>, stamina bar, and a context-sensitive key legend replacing all touch buttons.</p>
+<div class="mock">
+  <div class="mock-title">Gameplay · Canvas 2D top-down pitch · DOM HUD overlay</div>
+  <div class="screen hud-screen">
+    <div class="pitch-lines">
+      <div class="mid"></div><div class="circle"></div>
+      <div class="area l"></div><div class="area r"></div>
+    </div>
+    <!-- players -->
+    <div class="dot me" style="left:46%;top:52%">10</div>
+    <div class="balldot" style="left:48.5%;top:54%"></div>
+    <div class="dot us" style="left:30%;top:30%"></div>
+    <div class="dot us" style="left:34%;top:70%"></div>
+    <div class="dot us" style="left:58%;top:40%"></div>
+    <div class="dot them" style="left:62%;top:56%"></div>
+    <div class="dot them" style="left:70%;top:34%"></div>
+    <div class="dot them" style="left:78%;top:62%"></div>
+    <!-- ability circles on pitch -->
+    <div class="circle-ability speed" style="left:24%;top:58%">⚡</div>
+    <div class="circle-ability shot" style="left:68%;top:22%">☄</div>
+    <!-- HUD -->
+    <div class="hud-top">
+      <div class="scorebox">ARG 1 – 0 BRA <span class="half">1T</span> <span class="clock">02:14</span></div>
+      <div class="slots">
+        <div class="slot full speed">⚡<span class="key">1</span></div>
+        <div class="slot full dribble">👟<span class="key">2</span></div>
+        <div class="slot full bike">🔴<span class="key">3</span></div>
+        <div class="slot empty"><span class="key">4</span></div>
+        <div class="slot empty"><span class="key">5</span></div>
+      </div>
+    </div>
+    <div class="hud-bottom">
+      <div class="stamina"><div class="lbl">RESISTENCIA</div><div class="bar"><i></i></div></div>
+      <div class="keylegend">
+        <span><b><kbd>Z</kbd></b> Pase</span>
+        <span><b><kbd>X</kbd></b> Disparo</span>
+        <span><b><kbd>Shift</kbd></b> Sprint</span>
+        <span><b><kbd>P</kbd></b> Pausa</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>30.6 Mockup E — Hydration Break</h3>
+<div class="mock">
+  <div class="mock-title">Hydration break · gameplay and clock fully frozen · 1:00 real-time countdown</div>
+  <div class="screen">
+    <div class="hydration-panel">
+      <h5>PAUSA DE HIDRATACIÓN</h5>
+      <div class="count">01:00</div>
+      <div class="adbox">ESPACIO PARA PUBLICIDAD<br>
+        <span style="font-size:.72rem">Consejo: usa <b>Velocidad</b> justo antes de un contraataque.</span>
+      </div>
+      <div class="hint" style="margin-top:8px">El partido se reanuda automáticamente</div>
+    </div>
+  </div>
+</div>
+
+<h3>30.7 Mockup F — Match Result</h3>
+<div class="mock">
+  <div class="mock-title">Result screen · victory state · defeat swaps verdict + button to «REPETIR PARTIDO»</div>
+  <div class="screen">
+    <div class="result-grid">
+      <div class="verdict">¡VICTORIA!</div>
+      <div class="score">2 – 1</div>
+      <div class="teams">🇦🇷 Argentina · Brasil 🇧🇷</div>
+      <div class="rstats">
+        <table>
+          <tr><td>Goles</td><td><b>2</b></td></tr>
+          <tr><td>Asistencias</td><td><b>1</b></td></tr>
+          <tr><td>Recuperaciones</td><td><b>6</b></td></tr>
+          <tr><td>Tiros a puerta</td><td><b>4</b></td></tr>
+          <tr><td>Puntuación</td><td><b>1250</b> · Nota <b>8.7</b></td></tr>
+        </table>
+        <div class="xp">
+          <div class="lbl">EXPERIENCIA</div>
+          <div class="gain">+350 XP</div>
+          <div class="bar"><i></i></div>
+          <div class="lbl">Nivel 9 → 10 · Próximo rival: 🇫🇷 Francia</div>
+        </div>
+      </div>
+      <div class="btnrow"><div class="btn sel">CONTINUAR <span class="hint">(Enter)</span></div></div>
+    </div>
+  </div>
+</div>
+
+<h3>30.8 Mockup G — Trophy Screen</h3>
+<div class="mock">
+  <div class="mock-title">Trophy screen · after winning a final · shows tier and unlocked rewards</div>
+  <div class="screen">
+    <div class="trophy-grid">
+      <div class="trophy-big">🏆</div>
+      <div style="color:var(--gold);font-weight:900;font-size:1.2rem">¡CAMPEÓN DEL TORNEO 3!</div>
+      <div class="tiers">
+        <span><span class="t">🥉</span>Bronce</span>
+        <span><span class="t">🥈</span>Plata</span>
+        <span class="on"><span class="t">🏆</span>Oro</span>
+        <span><span class="t">🏆✨</span>Campeón</span>
+        <span><span class="t">👑</span>Leyenda</span>
+      </div>
+      <div class="reward-chip">🎽 Nueva equipación desbloqueada</div>
+      <div class="reward-chip">🕺 Celebración: Baile</div>
+      <div class="btnrow"><div class="btn primary">SIGUIENTE TORNEO <span class="hint">(Enter)</span></div></div>
+    </div>
+  </div>
+</div>
+
+<h2 id="s31">31. Advertising Integration <span class="tag post">Future</span></h2>
+<p>Hydration breaks are the designated advertising space. Implementation: a placeholder DOM container (<code>#ad-slot</code>) inside the hydration-break overlay. Rules: ads never exceed the 1:00 break, never consume playable time, must be age-appropriate and compliant with child-privacy regulations (no personalized ads for child accounts). When no ad is available a localized gameplay tip is shown (MVP behavior). Optional rewarded ads (cosmetics, bonus XP) are future work and must never be required to retry a match.</p>
+
+<h2 id="s32">32. Child Safety and Privacy</h2>
+<ul>
+  <li>No open text chat; predefined messages only (future multiplayer)</li>
+  <li>Username moderation, parental controls, purchase protection (future)</li>
+  <li>Minimal data collection — the offline game stores everything locally, nothing is transmitted</li>
+  <li>No gambling mechanics, no paid random loot boxes</li>
+  <li>COPPA / GDPR-K compliance for any future online feature</li>
+</ul>
+
+<h2 id="s33">33. Audio Design</h2>
+<p>Implemented with the Web Audio API; simple synthesized placeholder sounds are acceptable in the MVP.</p>
+<ul>
+  <li><strong>Music:</strong> main menu, tournament, pre-match, victory, defeat, trophy</li>
+  <li><strong>Effects:</strong> kick, pass, goal, save, tackle, whistle, crowd loop, ability collect, ability activate, bicycle kick, trophy, level-up, menu select</li>
+  <li><strong>Commentary:</strong> optional; MVP uses crowd reactions plus short localized announcer strings shown as text/audio — ES: «¡Gol!», «¡Qué paradón!», «¡Chilenita!», «¡Final del partido!» · EN: “Goal!”, “What a save!”, “Bicycle kick!”, “Full time!”</li>
+  <li>Browser rule: audio starts only after the first user interaction (autoplay policy) — the splash screen's "press any key" satisfies this.</li>
+</ul>
+
+<h2 id="s34">34. Animation Requirements</h2>
+<div class="fix"><b>Correction:</b> the original listed 3D skeletal animations. In the 2D top-down style, animations are token states + procedural effects.</div>
+<ul>
+  <li><strong>Player token states:</strong> idle, walk, run, sprint (motion trail), kick flash (pass/shoot), tackle slide, fall/recover, celebrate, dejected</li>
+  <li><strong>Goalkeeper states:</strong> ready, dive left/right (token stretch), catch flash, punch flash, rush</li>
+  <li><strong>Bicycle kick:</strong> special sequence — token spin + ball streak + screen flash + freeze-frame (~0.5 s) + unique sound. Requires setup, kick, and recovery phases; blocks other input during the sequence.</li>
+  <li><strong>UI:</strong> ability-slot fill pulse, goal banner slide, trophy shine, XP-bar fill</li>
+</ul>
+
+<h2 id="s35">35. Game State Machine</h2>
+<pre><code>Global:  BOOT → LANGUAGE_INIT → LOAD_PROFILE → MAIN_MENU
+         → (PLAYER_CREATION) → TOURNAMENT_VIEW → PRE_MATCH
+         → MATCH → RESULT → TOURNAMENT_PROGRESS → MAIN_MENU …
+
+Match:   MATCH_LOADING → KICK_OFF
+         → FIRST_HALF_1 → HYDRATION_BREAK_1 → FIRST_HALF_2
+         → HALF_TIME
+         → SECOND_HALF_1 → HYDRATION_BREAK_2 → SECOND_HALF_2
+         → FULL_TIME → [if draw] PENALTY_SHOOTOUT → RESULT
+                                                     (post-MVP: EXTRA_TIME before penalties)</code></pre>
+<div class="fix"><b>Correction:</b> half states are split into <code>_1</code>/<code>_2</code> sub-states around each hydration break, replacing the original's ambiguous repetition of the same state (<code>FIRST_HALF → HYDRATION_BREAK_1 → FIRST_HALF</code>), and the draw path reflects §11 (penalties in MVP, extra time post-MVP).</div>
+
+<h2 id="s36">36. Match State Data</h2>
+<pre><code>{
+  "matchId": "match_000134",
+  "tournamentId": "tournament_008",
+  "round": "SEMI_FINAL",
+  "homeTeamId": "team_argentina",
+  "awayTeamId": "team_brazil",
+  "homeScore": 1,
+  "awayScore": 1,
+  "half": 2,
+  "halfClockSeconds": 170,            // 0–300 within the current half
+  "state": "SECOND_HALF_2",
+  "hydrationBreaksCompleted": 2,
+  "playerInventory": ["ABILITY_SPEED", "ABILITY_BICYCLE_KICK"]
+}</code></pre>
+<div class="fix"><b>Correction:</b> <code>playableTimeRemainingSeconds</code> is replaced by <code>halfClockSeconds</code> (counts up within the half), matching the corrected clock model in §10.</div>
+
+<h2 id="s37">37. Player Save Data</h2>
+<p>Persisted in <code>localStorage</code> under a versioned key (e.g., <code>caminoCopa.save.v1</code>); the <code>saveVersion</code> field enables future migrations.</p>
+<pre><code>{
+  "saveVersion": 1,
+  "profileId": "player_001",
+  "language": "es",
+  "controlProfile": "ARROWS",
+  "displayName": "Alexis",
+  "countryId": "country_argentina",
+  "teamId": "team_argentina",
+  "position": "FORWARD",
+  "shirtNumber": 10,
+  "level": 12,
+  "experience": 2450,
+  "attributePoints": 3,
+  "attributes": {
+    "speed": 71, "acceleration": 73, "shooting": 76, "passing": 64,
+    "dribbling": 74, "tackling": 35, "strength": 58, "stamina": 69,
+    "positioning": 72, "reflexes": 30, "goalkeeping": 10
+  },
+  "currentTournament": 8,
+  "currentRound": "SEMI_FINAL",
+  "trophies": [
+    { "tournament": 1, "date": "2026-07-01", "difficulty": 1.14,
+      "finalOpponent": "team_brazil", "finalScore": "2-1" }
+  ],
+  "equipmentUnlocked": [],
+  "celebrationsUnlocked": [],
+  "selectedCelebration": "CELEBRATION_KNEE_SLIDE"
+}</code></pre>
+<div class="fix"><b>Correction:</b> <code>trophies</code> was a bare count in the original but §29 requires date/difficulty/opponent/result per trophy — it is now an array of records. <code>saveVersion</code> and <code>controlProfile</code> added.</div>
+
+<h2 id="s38">38. Technical Architecture</h2>
+<div class="fix"><b>Correction:</b> replaces the Unity/Godot recommendation. Confirmed stack: <strong>vanilla JavaScript (ES modules) + Canvas 2D</strong>, no dependencies, no build step.</div>
+<h3>38.1 Stack</h3>
+<ul>
+  <li><strong>Rendering:</strong> one <code>&lt;canvas&gt;</code> for the match; DOM/CSS overlays for menus and HUD</li>
+  <li><strong>Loop:</strong> <code>requestAnimationFrame</code> with a fixed logic timestep (60 Hz) and interpolated rendering</li>
+  <li><strong>Persistence:</strong> <code>localStorage</code> (save data, settings)</li>
+  <li><strong>Data:</strong> JSON files for localization, abilities, balancing, teams (fetched at boot; embedded as JS modules so <code>file://</code> also works)</li>
+  <li><strong>Audio:</strong> Web Audio API</li>
+  <li><strong>Testing:</strong> plain JS unit tests (node:test) for pure logic modules; optional Playwright smoke test</li>
+</ul>
+<h3>38.2 Proposed File Structure</h3>
+<pre><code>index.html
+css/ui.css
+js/main.js                 // boot + GameStateMachine
+js/core/loop.js            // fixed-timestep game loop
+js/core/input.js           // keyboard mapping, control profiles
+js/core/save.js            // localStorage + versioning
+js/core/i18n.js            // localization manager (es default)
+js/core/audio.js
+js/match/engine.js         // MatchEngine: clock, halves, breaks, score, states
+js/match/ball.js           // ball physics incl. height for aerial balls
+js/match/player.js         // controlled-player logic
+js/match/ai.js             // team/role AI
+js/match/abilities.js      // spawning, inventory, activation
+js/match/render.js         // canvas renderer (pitch, tokens, effects)
+js/meta/tournament.js      // generation, rounds, difficulty
+js/meta/progression.js     // XP, levels, attribute points
+js/meta/rewards.js
+js/ui/screens.js           // DOM screens (menu, creation, result, …)
+data/i18n.js               // localization dictionaries
+data/abilities.js          // ability configs (§18)
+data/config.js             // all balancing values (§10, §15.5, §19, §20, §22)
+data/teams.js</code></pre>
+<p>Each system must be independently testable; match logic must not touch the DOM directly (event-driven: the engine emits events such as <code>goal</code>, <code>breakStart</code>, <code>abilityCollected</code>; UI and audio subscribe).</p>
+
+<h2 id="s39">39. Code Modules and Responsibilities</h2>
+<table>
+<tr><th>Module</th><th>Responsibilities</th></tr>
+<tr><td><code>input.js</code></td><td>Keyboard events → abstract actions (move vector, action1, action2, sprint, slots, pause); control profiles; future touch/gamepad adapters</td></tr>
+<tr><td><code>player.js</code></td><td>Movement, rotation, sprint/stamina, ball interaction, ability activation, animation states</td></tr>
+<tr><td><code>ball.js</code></td><td>2D position + simulated height, possession, pass/shot trajectories, deflections, goal and out-of-bounds detection</td></tr>
+<tr><td><code>abilities.js</code></td><td>Spawn rules (§15), collection, inventory (5 slots), activation incl. conditional bicycle kick, durations, position weights, effect hooks</td></tr>
+<tr><td><code>engine.js</code></td><td>Match clock (§10), halves, hydration breaks, score, match states, penalties, completion</td></tr>
+<tr><td><code>ai.js</code></td><td>Role state machines, difficulty profiles, goalkeeper behavior, user-support behavior</td></tr>
+<tr><td><code>tournament.js</code></td><td>Generation, round progression, retry logic, opponent selection, difficulty, trophy assignment</td></tr>
+<tr><td><code>progression.js</code></td><td>XP (§20), levels, attribute points, permanent persistence guarantees</td></tr>
+<tr><td><code>i18n.js</code></td><td>Key lookup, es default / en switch, dynamic text updates, persistence</td></tr>
+<tr><td><code>save.js</code></td><td>Versioned localStorage save/load, migration hooks, autosave after every match/level-up</td></tr>
+</table>
+
+<h2 id="s40">40. Backend Requirements <span class="tag post">Future</span></h2>
+<p>The MVP is fully offline with local storage. Future online multiplayer requires: authentication, profiles, cloud save, matchmaking, rankings, result verification, moderation, remote config, analytics. Candidate services: Firebase, PlayFab, Supabase, or a custom Node backend. Decision deferred until the offline game is stable.</p>
+
+<h2 id="s41">41. Analytics <span class="tag post">Future</span></h2>
+<p>Recommended events (fired through a no-op stub in the offline MVP): <code>game_started</code>, <code>language_selected</code>, <code>player_created</code>, <code>position_selected</code>, <code>match_started</code>, <code>match_completed</code>, <code>match_won</code>, <code>match_lost</code>, <code>match_retried</code>, <code>ability_collected</code>, <code>ability_activated</code>, <code>bicycle_kick_activated</code>, <code>goal_scored</code>, <code>tournament_completed</code>, <code>equipment_unlocked</code>, <code>celebration_unlocked</code>, <code>hydration_break_started</code>, <code>ad_displayed</code>. Analytics must never collect unnecessary personal data from children.</p>
+
+<h2 id="s42">42. MVP Scope</h2>
+<ul>
+  <li>Spanish and English; Spanish default</li>
+  <li>Player creation; four positions; one controlled footballer</li>
+  <li>Player team + 4 AI opponent teams; one stadium theme</li>
+  <li>One 3-round tournament (QF, SF, Final) with infinite follow-up tournaments</li>
+  <li>10 playable minutes: 2×5:00 halves, 2×1:00 hydration breaks (clock frozen), half-time</li>
+  <li>Keyboard controls (two profiles), context actions, goalkeeper play</li>
+  <li>AI opponents and teammates; goal detection; victory/defeat; draw → penalty shootout</li>
+  <li>Replay current match after defeat; permanent XP/levels/attributes</li>
+  <li>5-slot ability inventory; Speed, Dribble, Tackle, Super Save, Bicycle Kick
+      <span class="hint">(Super Shot, Perfect Pass, Shield, Stamina follow post-MVP)</span></li>
+  <li>Performance scoring and match rating</li>
+  <li>Trophy + 1 equipment unlock + 1 celebration unlock</li>
+  <li>localStorage save system with versioning</li>
+  <li>Screens: menu, creation, tournament, pre-match, match HUD, hydration, half-time, result, trophy, settings</li>
+</ul>
+
+<h2 id="s43">43. Development Phases</h2>
+<table>
+<tr><th>Phase</th><th>Build</th><th>Success condition</th></tr>
+<tr><td>1. Core movement &amp; ball</td><td>Canvas pitch, keyboard movement, camera, ball possession/pass/shoot, goal detection</td><td>Move, receive, pass, shoot, and score with the keyboard</td></tr>
+<tr><td>2. Match structure</td><td>Clock, halves, hydration breaks, half-time, score, victory/defeat, retry</td><td>A complete 10-playable-minute match runs with correct pauses</td></tr>
+<tr><td>3. Team AI</td><td>Teammate/opponent roles, positioning, passing, shooting, goalkeeping</td><td>A meaningful full match vs AI</td></tr>
+<tr><td>4. Ability system</td><td>Circles, spawn rules, 5-slot inventory, activation, the 5 MVP abilities</td><td>Abilities spawn, collect, store, and activate correctly (incl. conditional Chilenita)</td></tr>
+<tr><td>5. Tournament</td><td>3 rounds, opponent pool, replay-on-defeat, final, trophy, next-tournament unlock</td><td>A full tournament can be completed</td></tr>
+<tr><td>6. Progression &amp; rewards</td><td>Performance points, XP, levels, attribute points, unlocks, versioned save</td><td>Progress survives closing the browser and losing matches</td></tr>
+<tr><td>7. Localization</td><td>i18n dictionaries, es default, en switch, all screens localized</td><td>Whole game playable in both languages</td></tr>
+<tr><td>8. Polish</td><td>Effects, audio, penalties mini-game polish, celebrations, trophy presentation</td><td>Feels complete and child-friendly</td></tr>
+<tr><td>9. Future</td><td>Touch controls, extra time, fouls/cards, ads, multiplayer, backend</td><td>—</td></tr>
+</table>
+
+<h2 id="s44">44. Acceptance Criteria</h2>
+<ol>
+  <li>A user can create a player.</li>
+  <li>The game starts in Spanish; the user can switch to English.</li>
+  <li>The whole game is playable with keyboard only (no mouse required).</li>
+  <li>The user controls exactly one footballer.</li>
+  <li>A match contains two 5:00 playable halves; the HUD clock never exceeds 5:00 per half.</li>
+  <li>Playable time totals exactly 10 minutes.</li>
+  <li>One 1:00 hydration break occurs per half at 2:30; gameplay and clock stop completely.</li>
+  <li>An advertisement placeholder (or tip) is visible during breaks.</li>
+  <li>The team with more goals wins; performance points never decide the winner.</li>
+  <li>A drawn match is resolved by the penalty shootout.</li>
+  <li>Losing repeats only the current match; all progression is preserved.</li>
+  <li>Five abilities can be stored; a sixth cannot be collected while full.</li>
+  <li>Ability slots activate with keys <kbd>1</kbd>–<kbd>5</kbd>.</li>
+  <li>The Bicycle Kick activates only under valid conditions and is <em>not</em> consumed otherwise (message shown).</li>
+  <li>Winning advances to the next round; winning the final grants a trophy, an equipment unlock, and a celebration.</li>
+  <li>A new, harder tournament begins; the sequence is indefinite.</li>
+  <li>Save data survives reloading and closing the browser.</li>
+  <li>The game runs offline from static files in current Chrome and Firefox.</li>
+</ol>
+
+<h2 id="s45">45. Instructions for the Coding AI</h2>
+<ol>
+  <li>Build modular ES modules exactly as in §38–39; match logic never touches the DOM.</li>
+  <li>No hard-coded gameplay values — everything in <code>data/config.js</code>.</li>
+  <li>Every visible string through <code>i18n.js</code> keys; Spanish is the fallback language.</li>
+  <li>Keyboard input only through <code>input.js</code> abstract actions (enables future touch/gamepad).</li>
+  <li>Implement save-data versioning from day one.</li>
+  <li>Event-driven communication between engine, UI, and audio.</li>
+  <li>Automated tests for: progression math, ability inventory rules, match timing (breaks freeze the clock), bicycle-kick conditions, localization completeness.</li>
+  <li>Procedural placeholder graphics/sounds before final art.</li>
+  <li>Configurable AI difficulty profiles.</li>
+  <li>Hydration breaks must freeze both gameplay and clock; losing must never reset permanent progression; the Bicycle Kick must never be consumed on invalid activation.</li>
+  <li>Keep monetization optional and completely separate from match progression.</li>
+</ol>
+
+<h2 id="s46">46. First Technical Deliverable</h2>
+<p>A grey-box browser prototype: one canvas pitch, procedural player tokens, one controllable footballer (keyboard), basic AI players, one ball, pass/shoot/tackle, goals and score, full 10-minute match logic with hydration breaks, 5 ability slots with the 5 MVP abilities, victory screen, defeat + replay, basic 3-round tournament progression. Final graphics, multiplayer, advertising, and advanced customization are explicitly out of scope for this deliverable.</p>
+
+<h2 id="s47">47. Final Product Summary</h2>
+<p><strong>Camino a la Copa</strong> is a bilingual (Spanish-default) arcade football game for the browser, played entirely with the keyboard. The user creates and controls one footballer, chooses a position and team, and competes in an infinite sequence of elimination tournaments of increasing difficulty.</p>
+<p>Matches contain exactly ten minutes of playable football in two 5-minute halves; each half has a one-minute hydration break during which everything stops (future ad space). Ability circles on the pitch grant collectible powers — up to five stored, activated with keys 1–5 — including Speed, Dribble, Tackle, Super Save, and the Chilenita bicycle kick.</p>
+<p>Most goals wins; draws go to penalties. Losing only replays the current match and never costs progression. Winning a final grants a trophy, equipment, and celebrations, then unlocks a harder tournament — forever.</p>
+<p>The game ships first as an offline vanilla-JS/Canvas experience against AI; multiplayer follows once the core is stable.</p>
+
+<h2 id="s48">Appendix A: Change Log vs. Original Document</h2>
+<table>
+<tr><th>#</th><th>Original</th><th>Correction / Adaptation</th><th>Reason</th></tr>
+<tr><td>1</td><td>Platform: Android/iOS touch first; Unity 3D; virtual joystick + touch buttons</td><td>HTML5 browser, keyboard controls, vanilla JS + Canvas 2D (§2, §13, §38)</td><td>The game will be programmed as an HTML game</td></tr>
+<tr><td>2</td><td>Stylized 3D characters, third-person 3D camera</td><td>Modern 2D arcade: top-down pitch, flat tokens, 2D scrolling camera (§5)</td><td>Feasible in Canvas 2D without assets; keeps arcade feel</td></tr>
+<tr><td>3</td><td>§10.3 timeline summed to 12:00 "match time"; mockup HUD clock showed 07:32</td><td>Clock counts 0:00→5:00 per half with half indicator; breaks freeze it; wall-clock ≈12:15 stated separately (§10, mockup D)</td><td>Original math/visual was impossible within 5-minute halves</td></tr>
+<tr><td>4</td><td>§17 table (Bicycle Kick "Limited" for Defender) contradicted §18 JSON (<code>allowedPositions</code> without DEFENDER)</td><td>Single mechanism: <code>positionSpawnWeights</code>, one authoritative table (§17–18)</td><td>Contradiction; weights also express "Limited" precisely</td></tr>
+<tr><td>5</td><td>MVP scope listed "Two teams" but required 3 distinct opponents (QF/SF/Final)</td><td>Player team + pool of 4 AI opponent teams (§22, §42)</td><td>Arithmetic: 3 rounds need ≥3 different opponents</td></tr>
+<tr><td>6</td><td>Draws: extra time + full penalty shootout in first version</td><td>MVP: immediate simplified penalty shootout; extra time post-MVP (§11)</td><td>User decision; original itself offered this simplification</td></tr>
+<tr><td>7</td><td>Difficulty formula: unspecified logarithm base</td><td><code>1 + ln(n+1) × 0.20</code> with sample values (§22.3)</td><td>Ambiguity would change balancing</td></tr>
+<tr><td>8</td><td>Mockup #12 listed "Saltar" (jump) and "Chilenita" as base controls</td><td>Chilenita only via ability slot key with conditions; jump/header post-MVP (§13)</td><td>Contradicted the ability system; kept controls minimal</td></tr>
+<tr><td>9</td><td>Spawn distances in meters with no pitch scale</td><td>Pitch defined as 105×68 logical units (§15.4)</td><td>Rules were unimplementable without a coordinate system</td></tr>
+<tr><td>10</td><td>Match state used <code>playableTimeRemainingSeconds</code>; ambiguous <code>FIRST_HALF → BREAK → FIRST_HALF</code> states</td><td><code>halfClockSeconds</code> + split half sub-states <code>_1</code>/<code>_2</code> (§35–36)</td><td>Consistency with corrected clock; unambiguous state machine</td></tr>
+<tr><td>11</td><td>Save data stored <code>trophies</code> as a number</td><td>Array of trophy records (date, difficulty, opponent, result) + <code>saveVersion</code> (§37)</td><td>§29 trophy room needs those fields; versioning was required but missing from the schema</td></tr>
+<tr><td>12</td><td>Performance table included fouls/cards while MVP excludes fouls</td><td>Entries kept in config, marked inactive until fouls exist (§14, §19)</td><td>Avoids dead rules in the MVP scoring</td></tr>
+<tr><td>13</td><td>Three visual alternatives per screen (touch)</td><td>One chosen per screen (Style A menus, Style B linear path), redrawn with key-cap hints (§30)</td><td>A buildable spec needs one decided design; keyboard replaces touch</td></tr>
+</table>
+
+</div>
+</body>
+</html>
