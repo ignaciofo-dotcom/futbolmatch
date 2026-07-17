@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camino a la Copa</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>⚽</text></svg>">
+<link rel="stylesheet" href="css/ui.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="pitch" width="1280" height="720"></canvas>
+
+  <!-- Match HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="scorebox">
+        <span id="hud-home">LOC</span> <span id="hud-score">0 – 0</span> <span id="hud-away">VIS</span>
+        <span class="half" id="hud-half">1T</span>
+        <span class="clock" id="hud-clock">00:00</span>
+      </div>
+      <div class="slots" id="hud-slots"></div>
+    </div>
+    <div class="hud-bottom">
+      <div class="stamina">
+        <div class="lbl" data-i18n="hud.stamina">RESISTENCIA</div>
+        <div class="bar"><i id="hud-stamina"></i></div>
+      </div>
+      <div class="keylegend" id="hud-legend"></div>
+    </div>
+    <div id="hud-toast" class="hidden"></div>
+    <div id="hud-banner" class="hidden"></div>
+  </div>
+
+  <!-- Screens -->
+  <div class="screen" id="screen-splash">
+    <div class="splash-inner">
+      <div class="ball-logo">⚽</div>
+      <h1 data-i18n="game.title">CAMINO A LA COPA</h1>
+      <p class="pulse" data-i18n="splash.pressKey">Pulsa cualquier tecla</p>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="screen-menu">
+    <div class="menu-layout">
+      <div class="menu-buttons" id="menu-buttons"></div>
+      <div class="menu-logo">
+        <div class="ball-logo">⚽</div>
+        <div class="name" data-i18n="game.title">CAMINO A LA COPA</div>
+        <div class="hint" id="menu-status"></div>
+      </div>
+    </div>
+    <div class="screen-hint"><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="nav.navigate">navegar</span> · <kbd>Enter</kbd> <span data-i18n="nav.choose">elegir</span></div>
+  </div>
+
+  <div class="screen hidden" id="screen-create">
+    <h2 data-i18n="create.title">CREA TU JUGADOR</h2>
+    <div class="create-layout">
+      <div class="avatar-box"><div id="create-avatar"></div><div class="hint" data-i18n="create.preview">Vista previa</div></div>
+      <div class="form-box" id="create-form"></div>
+    </div>
+    <div class="screen-hint"><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="nav.field">campo</span> · <kbd>←</kbd><kbd>→</kbd> <span data-i18n="nav.change">cambiar</span> · <kbd>Enter</kbd> <span data-i18n="nav.confirm">confirmar</span></div>
+  </div>
+
+  <div class="screen hidden" id="screen-myplayer">
+    <h2 data-i18n="menu.player">MI JUGADOR</h2>
+    <div id="myplayer-content"></div>
+    <div class="screen-hint"><kbd>↑</kbd><kbd>↓</kbd> · <kbd>Enter</kbd> <span data-i18n="myplayer.spend">añadir punto</span> · <kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
+  </div>
+
+  <div class="screen hidden" id="screen-tournament">
+    <h2 id="tournament-title"></h2>
+    <div class="path" id="tournament-path"></div>
+    <div class="screen-hint"><kbd>Enter</kbd> <span data-i18n="tournament.playNext">jugar siguiente partido</span> · <kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
+  </div>
+
+  <div class="screen hidden" id="screen-trophies">
+    <h2 data-i18n="menu.trophies">TROFEOS</h2>
+    <div id="trophies-list"></div>
+    <div class="screen-hint"><kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
+  </div>
+
+  <div class="screen hidden" id="screen-settings">
+    <h2 data-i18n="menu.settings">AJUSTES</h2>
+    <div class="form-box" id="settings-form"></div>
+    <div class="screen-hint"><kbd>↑</kbd><kbd>↓</kbd> · <kbd>←</kbd><kbd>→</kbd> <span data-i18n="nav.change">cambiar</span> · <kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
+  </div>
+
+  <div class="screen hidden" id="screen-prematch">
+    <h2 id="prematch-round"></h2>
+    <div class="prematch-teams" id="prematch-teams"></div>
+    <div id="prematch-info"></div>
+    <div class="screen-hint"><kbd>Enter</kbd> <span data-i18n="prematch.start">comenzar partido</span></div>
+  </div>
+
+  <div class="screen hidden" id="screen-result">
+    <div class="result-inner" id="result-content"></div>
+  </div>
+
+  <div class="screen hidden" id="screen-trophy">
+    <div class="trophy-inner" id="trophy-content"></div>
+  </div>
+
+  <!-- Match overlays -->
+  <div class="overlay hidden" id="overlay-hydration">
+    <div class="panel">
+      <h3 data-i18n="hydration_break">PAUSA DE HIDRATACIÓN</h3>
+      <div class="count" id="hydration-count">01:00</div>
+      <div class="adbox" id="ad-slot"><span data-i18n="ads.placeholder">ESPACIO PARA PUBLICIDAD</span><br><span class="tip" id="hydration-tip"></span></div>
+      <div class="hint" data-i18n="hydration.resume">El partido se reanuda automáticamente</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overlay-halftime">
+    <div class="panel">
+      <h3 data-i18n="halftime.title">DESCANSO</h3>
+      <div class="count" id="halftime-score"></div>
+      <div id="halftime-stats"></div>
+      <div class="hint"><span id="halftime-count"></span> · <kbd>Enter</kbd> <span data-i18n="halftime.skip">continuar</span></div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overlay-pause">
+    <div class="panel">
+      <h3 data-i18n="pause.title">PAUSA</h3>
+      <div class="hint"><kbd>P</kbd>/<kbd>Esc</kbd> <span data-i18n="pause.resume">reanudar</span> · <kbd>Q</kbd> <span data-i18n="pause.quit">abandonar partido</span></div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overlay-penalties">
+    <div class="panel wide">
+      <h3 data-i18n="penalties.title">TANDA DE PENALTIS</h3>
+      <div class="pen-score" id="pen-score"></div>
+      <div class="pen-goal" id="pen-goal">
+        <div class="pen-zone" data-zone="0"></div>
+        <div class="pen-zone" data-zone="1"></div>
+        <div class="pen-zone" data-zone="2"></div>
+        <div class="pen-ball hidden" id="pen-ball">⚽</div>
+        <div class="pen-gk" id="pen-gk">🧤</div>
+      </div>
+      <div class="pen-power hidden" id="pen-power"><i id="pen-power-marker"></i></div>
+      <div class="hint" id="pen-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/data/config.js"></script>
+<script src="js/data/i18n-data.js"></script>
+<script src="js/data/teams.js"></script>
+<script src="js/data/abilities.js"></script>
+<script src="js/core/events.js"></script>
+<script src="js/core/i18n.js"></script>
+<script src="js/core/save.js"></script>
+<script src="js/core/input.js"></script>
+<script src="js/core/audio.js"></script>
+<script src="js/meta/progression.js"></script>
+<script src="js/meta/tournament.js"></script>
+<script src="js/match/engine.js"></script>
+<script src="js/match/sim.js"></script>
+<script src="js/match/abilities.js"></script>
+<script src="js/match/render.js"></script>
+<script src="js/match/penalties.js"></script>
+<script src="js/ui/screens.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

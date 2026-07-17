@@ -278,11 +278,11 @@
 </ol>
 
 <h2 id="s5">5. Visual Direction</h2>
-<div class="fix"><b>Correction:</b> the original recommended stylized 3D characters with a third-person 3D camera. That is not feasible or necessary for a vanilla Canvas 2D game. The chosen direction is <strong>"Modern 2D arcade"</strong>: the mockups' Style A interface with a top-down 2D pitch.</div>
+<div class="fix"><b>Correction / decision:</b> the original recommended stylized 3D characters with a third-person 3D camera. Full 3D is not feasible in vanilla Canvas 2D, so the chosen direction is a <strong>2.5D perspective</strong> ("Style A" interface): the simulation runs in flat field coordinates while the renderer projects the pitch into a tilted perspective that recedes toward a stadium horizon — the "most 3D" look achievable without a 3D engine. This is the implemented style (see <code>js/match/render.js</code>).</div>
 <h3>5.1 Visual Style</h3>
 <ul>
-  <li><strong>Top-down 2D pitch</strong> rendered on Canvas: green striped grass, white line markings, goals at left/right.</li>
-  <li><strong>Flat stylized players</strong>: colored circular/capsule tokens with shirt number, team color, and facing direction; the controlled player has a bright ring highlight.</li>
+  <li><strong>2.5D perspective pitch</strong> rendered on Canvas: the field is projected with a 1/depth perspective so it tilts away from the camera; striped grass, white line markings, goals with nets, floodlights and a stadium horizon.</li>
+  <li><strong>Shaded player figures</strong>: standing tokens (shadow, shaded torso, head, hair, shirt number) whose size scales with depth; the controlled player has a bright ring highlight and an active-ability aura.</li>
   <li>Exaggerated ability effects: glow rings, trails, screen flashes — clear and rewarding for children.</li>
   <li>Friendly, energetic tone; no attempt at realism.</li>
 </ul>
@@ -298,7 +298,7 @@
 <p>Players are drawn as stylized 2D tokens (head + shirt in menus; top-down token in matches). Customization changes skin tone, hair color, shirt style/colors, and number — all drawn procedurally (no art assets required for the MVP).</p>
 <h3>5.4 Camera</h3>
 <div class="fix"><b>Correction:</b> replaces the 3D "third-person elevated camera".</div>
-<p>A 2D scrolling camera follows the controlled player, keeping the ball inside view whenever possible (the camera targets a weighted point between player and ball). The full pitch does not need to fit on screen; a minimap is optional and post-MVP.</p>
+<p>The implemented MVP uses a <strong>fixed full-pitch perspective camera</strong>: the whole 5-a-side pitch is visible at once, projected in 2.5D with the near (own) goal at the bottom of the screen and the far (opponent) goal near the horizon. The user always attacks "up" into the screen. A player-following scrolling camera is a post-MVP option.</p>
 
 <h2 id="s6">6. Language and Localization</h2>
 <h3>6.1 Supported Languages</h3>

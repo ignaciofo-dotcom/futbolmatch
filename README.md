@@ -1,26 +1,61 @@
 # Camino a la Copa (Road to the Cup)
 
-An arcade-style football game for the **browser**, played entirely with the **keyboard**.
+An arcade-style football game for the **browser**, played entirely with the **keyboard**,
+rendered in a **2.5D perspective** (a tilted pitch that recedes toward a stadium horizon).
 
-The user creates and controls **one footballer** (goalkeeper, defender, midfielder, or forward) and competes in an infinite sequence of elimination tournaments. During matches, ability circles appear on the pitch — up to five can be collected and activated strategically (Speed, Dribble, Tackle, Super Save, and the *Chilenita* bicycle kick). Matches last ten playable minutes with hydration breaks; losing only replays the current match and never costs progression. Winning a final grants a trophy and unlocks a harder tournament.
+The user creates and controls **one footballer** (goalkeeper, defender, midfielder, or forward)
+and competes in an infinite sequence of elimination tournaments. During matches, ability circles
+appear on the pitch — up to five can be collected and activated strategically (Speed, Dribble,
+Tackle, Super Save, and the *Chilenita* bicycle kick). Matches last ten playable minutes with
+hydration breaks; losing only replays the current match and never costs progression. Winning a
+final grants a trophy and unlocks a harder tournament.
 
 Bilingual: Spanish (default) and English.
 
-## Design document
+## Play it
 
-The complete, corrected game design and development specification lives at
-[`docs/design.html`](docs/design.html) — open it in any browser.
+It's a static site — no build step, no dependencies.
 
-It is the HTML/keyboard adaptation of the original mobile-oriented design PDF: all logic
-inconsistencies were fixed (match-clock model, ability/position tables, MVP team count,
-state machine, save schema) and every screen mockup was redrawn for keyboard input.
-Appendix A of the document lists every change against the original.
+```bash
+# from the repository root, serve the folder over HTTP (localStorage needs a real origin):
+python3 -m http.server 8000
+# then open http://localhost:8000 in a browser
+```
 
-## Planned stack
+Opening `index.html` directly via `file://` also works, except save data won't persist.
 
-- Vanilla JavaScript (ES modules) + Canvas 2D — no dependencies, no build step
-- DOM/CSS overlays for menus and HUD
-- `localStorage` for versioned save data
-- JSON-based localization (Spanish default) and balancing configuration
+### Controls (default profile — configurable in Ajustes)
 
-Implementation will follow the phases described in §43 of the design document.
+| Action | Key |
+| --- | --- |
+| Move | Arrow keys |
+| Sprint | Shift (hold) |
+| Pass / pressure | Z |
+| Shoot (hold to charge, aim with heading) / tackle | X |
+| Activate ability slot 1–5 | 1–5 |
+| Pause | P / Esc |
+| Menus | Arrows + Enter, Esc to go back |
+
+A second profile (WASD + J/K/L) is available in Settings.
+
+## Project layout
+
+```
+index.html            # page skeleton: canvas + DOM screens/HUD/overlays
+css/ui.css            # dark-blue/gold theme
+js/data/              # config.js (all balancing), i18n-data.js, teams.js, abilities.js
+js/core/              # events bus, i18n, save (localStorage+versioning), input (keyboard), audio (WebAudio)
+js/meta/              # progression (XP/levels/attributes), tournament (generation/difficulty)
+js/match/             # engine (clock/halves/breaks/state machine), sim (physics+AI),
+                      #   abilities (spawn/inventory/activation), render (2.5D projection), penalties
+js/ui/screens.js      # all DOM screens and the HUD
+js/main.js            # global state machine + fixed-timestep game loop
+docs/design.html      # full corrected design specification
+```
+
+Design principles followed: no hard-coded gameplay values (all in `js/data/config.js`), every
+visible string via localization keys (Spanish fallback), keyboard input behind an abstraction
+layer (so touch/gamepad can be added later), versioned save data, and event-driven communication
+between the match engine, UI, and audio.
+
+See [`docs/design.html`](docs/design.html) for the complete design document.
