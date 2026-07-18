@@ -132,20 +132,31 @@ window.Renderer = (function () {
   }
 
   function drawOrb(c) {
-    const s = project(c.x, c.y, 0);
-    const pulse = 0.75 + 0.25 * Math.sin(performance.now() / 200 + c.id);
-    const r = 15 * s.s * pulse;
-    // ground glow
-    const gl = ctx.createRadialGradient(s.x, s.y, 2, s.x, s.y, r * 2.4);
-    gl.addColorStop(0, c.color + 'cc'); gl.addColorStop(1, c.color + '00');
-    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(s.x, s.y, r * 2.4, 0, 7); ctx.fill();
-    // orb hovering slightly
-    const oy = s.y - 10 * s.s;
-    const g = ctx.createRadialGradient(s.x - r * 0.4, oy - r * 0.4, 1, s.x, oy, r);
-    g.addColorStop(0, '#ffffff'); g.addColorStop(.35, c.color); g.addColorStop(1, c.color);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, oy, r, 0, 7); ctx.fill();
-    ctx.font = `${Math.round(15 * s.s)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(c.icon, s.x, oy + 1);
+    const s = project(c.x, c.y, 0), sc = s.s;
+    const pulse = 0.9 + 0.1 * Math.sin(performance.now() / 240 + c.id);
+    const R = 15 * sc * pulse;           // bubble radius
+    const oy = s.y - 13 * sc;            // hovers above its ground spot
+    const icon = c.icon || (window.ABILITIES[c.abilityId] && window.ABILITIES[c.abilityId].icon) || '★';
+
+    // coloured ground aura (keeps the per-ability colour cue) + soft shadow
+    const gl = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, R * 2.0);
+    gl.addColorStop(0, c.color + 'aa'); gl.addColorStop(1, c.color + '00');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(s.x, s.y, R * 2.0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.22)';
+    ctx.beginPath(); ctx.ellipse(s.x, s.y, 8 * sc, 3 * sc, 0, 0, 7); ctx.fill();
+
+    // light bubble backing so the icon reads clearly against the grass, with a coloured ring
+    const g = ctx.createRadialGradient(s.x - R * 0.4, oy - R * 0.4, 1, s.x, oy, R);
+    g.addColorStop(0, 'rgba(255,255,255,.98)'); g.addColorStop(1, 'rgba(233,240,252,.92)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, oy, R, 0, 7); ctx.fill();
+    ctx.lineWidth = 2.6 * sc; ctx.strokeStyle = c.color;
+    ctx.beginPath(); ctx.arc(s.x, oy, R, 0, 7); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.4)';               // glossy top highlight
+    ctx.beginPath(); ctx.ellipse(s.x, oy - R * 0.4, R * 0.5, R * 0.26, 0, 0, 7); ctx.fill();
+
+    // the ability figure — the same emoji shown in the HUD slot (Speed -> ⚡, etc.)
+    ctx.font = `${Math.round(20 * sc)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(icon, s.x, oy + 1);
   }
 
   const SKIN = ['#f2c9a0', '#e0ac69', '#c68642', '#8d5524'];
