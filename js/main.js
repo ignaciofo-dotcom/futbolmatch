@@ -35,6 +35,7 @@ window.Game = (function () {
       case 'RESULT': window.UI.show('result', ctx); break;
       case 'TROPHY': window.UI.show('trophy', ctx); break;
     }
+    window.Bus.emit('stateChanged', s);
   }
   function show(name) { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); document.getElementById('hud').classList.add('hidden'); document.getElementById('screen-' + name).classList.remove('hidden'); }
 

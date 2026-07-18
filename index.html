@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Camino a la Copa</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>⚽</text></svg>">
 <link rel="stylesheet" href="css/ui.css">
@@ -63,24 +63,28 @@
   </div>
 
   <div class="screen hidden" id="screen-myplayer">
+    <div class="touch-back" data-i18n="nav.back">volver</div>
     <h2 data-i18n="menu.player">MI JUGADOR</h2>
     <div id="myplayer-content"></div>
     <div class="screen-hint"><kbd>↑</kbd><kbd>↓</kbd> · <kbd>Enter</kbd> <span data-i18n="myplayer.spend">añadir punto</span> · <kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
   </div>
 
   <div class="screen hidden" id="screen-tournament">
+    <div class="touch-back" data-i18n="nav.back">volver</div>
     <h2 id="tournament-title"></h2>
     <div class="path" id="tournament-path"></div>
     <div class="screen-hint"><kbd>Enter</kbd> <span data-i18n="tournament.playNext">jugar siguiente partido</span> · <kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
   </div>
 
   <div class="screen hidden" id="screen-trophies">
+    <div class="touch-back" data-i18n="nav.back">volver</div>
     <h2 data-i18n="menu.trophies">TROFEOS</h2>
     <div id="trophies-list"></div>
     <div class="screen-hint"><kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
   </div>
 
   <div class="screen hidden" id="screen-settings">
+    <div class="touch-back" data-i18n="nav.back">volver</div>
     <h2 data-i18n="menu.settings">AJUSTES</h2>
     <div class="form-box" id="settings-form"></div>
     <div class="screen-hint"><kbd>↑</kbd><kbd>↓</kbd> · <kbd>←</kbd><kbd>→</kbd> <span data-i18n="nav.change">cambiar</span> · <kbd>Esc</kbd> <span data-i18n="nav.back">volver</span></div>
@@ -117,6 +121,7 @@
       <div class="count" id="halftime-score"></div>
       <div id="halftime-stats"></div>
       <div class="hint"><span id="halftime-count"></span> · <kbd>Enter</kbd> <span data-i18n="halftime.skip">continuar</span></div>
+      <div class="ov-btn" data-vkey="confirm" data-i18n="halftime.skip">continuar</div>
     </div>
   </div>
 
@@ -124,6 +129,10 @@
     <div class="panel">
       <h3 data-i18n="pause.title">PAUSA</h3>
       <div class="hint"><kbd>P</kbd>/<kbd>Esc</kbd> <span data-i18n="pause.resume">reanudar</span> · <kbd>Q</kbd> <span data-i18n="pause.quit">abandonar partido</span></div>
+      <div class="ov-row">
+        <div class="ov-btn" data-vkey="pause" data-i18n="pause.resume">reanudar</div>
+        <div class="ov-btn danger" data-vkey="quit" data-i18n="pause.quit">abandonar</div>
+      </div>
     </div>
   </div>
 
@@ -132,15 +141,21 @@
       <h3 data-i18n="penalties.title">TANDA DE PENALTIS</h3>
       <div class="pen-score" id="pen-score"></div>
       <div class="pen-goal" id="pen-goal">
-        <div class="pen-zone" data-zone="0"></div>
-        <div class="pen-zone" data-zone="1"></div>
-        <div class="pen-zone" data-zone="2"></div>
+        <div class="pen-zone" data-zone="0" data-vkey="left"></div>
+        <div class="pen-zone" data-zone="1" data-vkey="up"></div>
+        <div class="pen-zone" data-zone="2" data-vkey="right"></div>
         <div class="pen-ball hidden" id="pen-ball">⚽</div>
         <div class="pen-gk" id="pen-gk">🧤</div>
       </div>
       <div class="pen-power hidden" id="pen-power"><i id="pen-power-marker"></i></div>
       <div class="hint" id="pen-msg"></div>
+      <div class="ov-btn pen-go" data-vkey="action2" data-i18n="penalties.go">¡YA!</div>
     </div>
+  </div>
+
+  <!-- Shown only on touch devices held in portrait (the pitch is landscape 16:9) -->
+  <div id="rotate">
+    <div class="rot-inner"><div class="rot-icon">📱</div><span data-i18n="rotate.msg">Gira tu teléfono para jugar</span></div>
   </div>
 </div>
 
@@ -152,6 +167,7 @@
 <script src="js/core/i18n.js"></script>
 <script src="js/core/save.js"></script>
 <script src="js/core/input.js"></script>
+<script src="js/core/touch.js"></script>
 <script src="js/core/audio.js"></script>
 <script src="js/meta/progression.js"></script>
 <script src="js/meta/tournament.js"></script>

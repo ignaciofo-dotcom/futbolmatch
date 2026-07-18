@@ -173,3 +173,58 @@ kbd{display:inline-block;min-width:1.5em;text-align:center;padding:1px 6px;margi
 .pen-power i{position:absolute;top:0;bottom:0;width:5px;background:var(--gold);left:0}
 .pen-msg{color:var(--muted);margin-top:10px;min-height:1.2em;font-weight:700}
 .pen-msg.goal{color:var(--green)} .pen-msg.saved,.pen-msg.miss{color:var(--red)}
+
+/* ===== Touch / mobile ===== */
+body.touch{touch-action:none;overscroll-behavior:none}
+/* overlay tap buttons (also clickable with a mouse) */
+.ov-btn{display:inline-block;margin-top:12px;padding:10px 24px;border-radius:10px;font-weight:800;letter-spacing:.02em;
+  background:#12336e;border:2px solid var(--blue);color:#fff;cursor:pointer;user-select:none}
+.ov-btn.danger{background:#5a1616;border-color:var(--red)}
+.ov-btn.vpress{filter:brightness(1.3);transform:scale(.97)}
+.ov-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.pen-go{margin-top:14px;padding:12px 34px;font-size:1.05rem}
+
+/* back button (touch only) */
+.touch-back{display:none}
+body.touch .touch-back{display:inline-flex;position:absolute;top:12px;left:12px;z-index:20;align-items:center;
+  padding:8px 16px 8px 12px;border-radius:10px;background:var(--panel2);border:2px solid var(--line);
+  color:var(--text);font-weight:800;pointer-events:auto}
+body.touch .touch-back::before{content:'‹';font-size:1.25em;margin-right:6px;line-height:1}
+
+/* on-screen match controls */
+#touch-match{position:absolute;inset:0;margin:auto;width:min(100vw,177.78vh);height:min(56.25vw,100vh);
+  z-index:8;pointer-events:none;display:none}
+body.touch #touch-match.visible{display:block}
+#tc-move{position:absolute;left:0;bottom:0;width:46%;height:80%;pointer-events:auto;touch-action:none}
+#tc-stick{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;z-index:2;
+  border:2px solid rgba(255,255,255,.35);background:rgba(8,20,40,.4);pointer-events:none}
+#tc-thumb{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#7dd3fc,#2563eb);border:2px solid rgba(255,255,255,.6)}
+#tc-buttons{position:absolute;right:2%;bottom:5%;width:240px;height:210px;pointer-events:none}
+.tc-btn{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;color:#fff;
+  font-weight:800;font-size:.72rem;letter-spacing:.02em;text-align:center;user-select:none;
+  background:rgba(18,42,85,.85);border:2px solid #3c62a8;box-shadow:0 2px 8px #0006;
+  display:flex;align-items:center;justify-content:center}
+.tc-btn.vpress{transform:scale(.9);filter:brightness(1.35)}
+.tc-btn.shoot{right:6px;bottom:14px;width:84px;height:84px;font-size:.8rem;background:rgba(150,32,32,.9);border-color:var(--red)}
+.tc-btn.pass{right:86px;bottom:60px;width:66px;height:66px;background:rgba(24,96,54,.9);border-color:var(--green)}
+.tc-btn.loft{right:26px;bottom:106px;width:60px;height:60px;background:rgba(150,102,20,.9);border-color:var(--gold)}
+.tc-btn.switch{right:132px;bottom:6px;width:58px;height:58px}
+.tc-btn.sprint{right:160px;bottom:84px;width:60px;height:60px;background:rgba(50,70,110,.9)}
+.tc-pause{position:absolute;top:2%;left:50%;transform:translateX(-50%);pointer-events:auto;touch-action:none;
+  width:44px;height:34px;border-radius:8px;border:1px solid var(--line);background:rgba(6,14,32,.85);color:#fff;font-size:1rem}
+
+/* make HUD ability slots tappable on touch; hide keyboard-only hints */
+body.touch #hud-slots,body.touch .slot{pointer-events:auto;touch-action:none}
+body.touch .slot.vpress{transform:scale(.9);filter:brightness(1.3)}
+body.touch .screen-hint,body.touch .keylegend{display:none}
+body.touch #overlay-pause .hint,body.touch #overlay-halftime .hint{display:none}
+
+/* rotate-to-landscape gate (the pitch is 16:9) */
+#rotate{display:none}
+@media (orientation:portrait){
+  body.touch #rotate{display:flex;position:fixed;inset:0;z-index:100;background:#050b18;align-items:center;justify-content:center}
+}
+.rot-inner{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--muted);font-size:1.1rem;text-align:center;padding:0 8%}
+.rot-icon{font-size:3.2rem;animation:rot 1.8s ease-in-out infinite}
+@keyframes rot{0%,100%{transform:rotate(0)}40%,60%{transform:rotate(-90deg)}}

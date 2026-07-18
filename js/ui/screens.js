@@ -44,7 +44,9 @@ window.UI = (function () {
       const wrap = $('menu-buttons'); wrap.innerHTML = '';
       this.opts.forEach(([k], i) => {
         const b = document.createElement('div'); b.className = 'btn' + (i === this.idx ? ' sel' : '');
-        b.textContent = t(k); wrap.appendChild(b);
+        b.textContent = t(k);
+        b.onclick = () => { this.idx = i; this.nav('confirm'); };
+        wrap.appendChild(b);
       });
       const p = window.Game.profile;
       $('menu-status').textContent = p ? `${p.displayName} · ${t('myplayer.level')} ${p.level} · ${t('tournament.title', { n: p.currentTournament })}` : '';
@@ -80,13 +82,32 @@ window.UI = (function () {
         f.className = 'field' + (i === this.idx ? ' sel' : '') + (this._editing && key === 'name' ? ' editing' : '');
         const editable = ['country', 'position', 'number', 'skin', 'hair'].includes(key);
         f.innerHTML = `<label>${t(label)}</label>${editable ? '<span class="arr">◀</span>' : ''}<span class="val">${val}</span>${editable ? '<span class="arr">▶</span>' : ''}`;
+        // tap to select / edit (name) or cycle the value forward; tap an arrow for either direction
+        f.onclick = () => { this.idx = i; if (key === 'name') this.editName(); else this.nav('right'); };
+        const arrs = f.querySelectorAll('.arr');
+        if (arrs.length === 2) {
+          arrs[0].onclick = (e) => { e.stopPropagation(); this.idx = i; this.nav('left'); };
+          arrs[1].onclick = (e) => { e.stopPropagation(); this.idx = i; this.nav('right'); };
+        }
         box.appendChild(f);
       });
       const cont = document.createElement('div');
       cont.className = 'field action' + (this.idx === 6 ? ' sel' : '');
       cont.textContent = t('create.continue');
+      cont.onclick = () => { this.idx = 6; this.nav('confirm'); };
       box.appendChild(cont);
       this.renderAvatar();
+    },
+    editName() {
+      const d = this.data;
+      if (document.body.classList.contains('touch')) {           // reliable mobile text entry
+        const v = window.prompt(t('create.name'), d.name);
+        if (v != null) { d.name = v.trim() || 'Jugador'; this.render(); }
+      } else {
+        this._editing = true; this.render();
+        window.Input.beginText(d.name, (v) => { d.name = (v || 'Jugador').trim() || 'Jugador'; this._editing = false; this.render(); },
+          () => { this._editing = false; this.render(); });
+      }
     },
     renderAvatar() {
       const d = this.data, team = window.TEAMS[d.teamIdx];
@@ -116,9 +137,7 @@ window.UI = (function () {
       }
       if (a === 'confirm') {
         if (key === 'name') {
-          this._editing = true; this.render();
-          window.Input.beginText(d.name, (v) => { d.name = (v || 'Jugador').trim() || 'Jugador'; this._editing = false; this.render(); },
-            () => { this._editing = false; this.render(); });
+          this.editName();
         } else if (key === 'continue') {
           window.Audio2.play('select');
           window.Bus.emit('nav:createDone', {
@@ -150,6 +169,14 @@ window.UI = (function () {
       });
       html += '</div>';
       box.innerHTML = html;
+      box.querySelectorAll('.field').forEach((f, i) => {
+        f.onclick = () => {
+          this.idx = i;
+          if (window.Progression.spendPoint(p, ATTRS[i])) { window.Audio2.play('levelup'); window.Save.save(p); }
+          else window.Audio2.play('error');
+          this.render();
+        };
+      });
     },
     nav(a) {
       const p = window.Game.profile; if (!p) return;
@@ -181,6 +208,7 @@ window.UI = (function () {
         const st = r.result ? '✔' : (i === p.currentRoundIndex ? '▶' : '🔒');
         const who = r.result ? `${r.result.home}–${r.result.away}` : `${t('tournament.vs')} ${opp.flag} ${opp.name}`;
         row.innerHTML = `<span class="st">${st}</span>${t('round.' + r.round)}<span class="who">${who}</span>`;
+        if (state === 'cur') row.onclick = () => window.Bus.emit('nav:play');
         path.appendChild(row);
       });
     },
@@ -217,9 +245,14 @@ window.UI = (function () {
       rows.forEach(([label, val], i) => {
         const f = document.createElement('div'); f.className = 'field' + (i === this.idx ? ' sel' : '');
         f.innerHTML = `<label>${t(label)}</label><span class="arr">◀</span><span class="val">${val}</span><span class="arr">▶</span>`;
+        f.onclick = () => { this.idx = i; this.nav('right'); };
+        const arrs = f.querySelectorAll('.arr');
+        arrs[0].onclick = (e) => { e.stopPropagation(); this.idx = i; this.nav('left'); };
+        arrs[1].onclick = (e) => { e.stopPropagation(); this.idx = i; this.nav('right'); };
         box.appendChild(f);
       });
       const r = document.createElement('div'); r.className = 'field action' + (this.idx === 4 ? ' sel' : ''); r.textContent = t('settings.reset');
+      r.onclick = () => { this.idx = 4; this.nav('confirm'); };
       box.appendChild(r);
     },
     nav(a) {
@@ -254,7 +287,9 @@ window.UI = (function () {
         <div class="vs">${t('tournament.vs')}</div>
         <div class="team"><div class="flag">${away.flag}</div>${away.name}</div>`;
       const tr = window.Tournament.ensure(p);
-      $('prematch-info').innerHTML = `${t('pos.' + p.position)} · ${t('tournament.difficulty')} ×${tr.difficultyMultiplier}<br>${t('prematch.objective')}`;
+      $('prematch-info').innerHTML = `${t('pos.' + p.position)} · ${t('tournament.difficulty')} ×${tr.difficultyMultiplier}<br>${t('prematch.objective')}
+        <div class="btn primary center tap-start" style="margin-top:16px">${t('prematch.start')}</div>`;
+      $('prematch-info').querySelector('.tap-start').onclick = () => window.Bus.emit('nav:startMatch');
     },
     nav(a) { if (a === 'confirm') window.Bus.emit('nav:startMatch'); },
   };
@@ -288,7 +323,8 @@ window.UI = (function () {
             ${nextOpp ? `<div class="lbl">${t('result.next')}: ${nextOpp.flag} ${nextOpp.name}</div>` : ''}
           </div>
         </div>
-        <div class="btn primary center" style="pointer-events:none">${win ? t('result.continue') : t('result.rematch')} &nbsp;(Enter)</div>`;
+        <div class="btn primary center tap-done">${win ? t('result.continue') : t('result.rematch')} &nbsp;(Enter)</div>`;
+      $('result-content').querySelector('.tap-done').onclick = () => window.Bus.emit('nav:resultDone');
     },
     nav(a) { if (a === 'confirm') window.Bus.emit('nav:resultDone'); },
   };
@@ -304,7 +340,8 @@ window.UI = (function () {
         <div class="title">${t('trophy.champion', { n: r.tournamentNumber })}</div>
         <div class="reward-chip">🎽 ${t('trophy.unlockedKit')}</div>
         <div class="reward-chip">🕺 ${t('trophy.unlockedCeleb')}</div>
-        <div class="btn primary center" style="pointer-events:none;margin-top:10px">${t('trophy.next')} &nbsp;(Enter)</div>`;
+        <div class="btn primary center tap-done" style="margin-top:10px">${t('trophy.next')} &nbsp;(Enter)</div>`;
+      $('trophy-content').querySelector('.tap-done').onclick = () => window.Bus.emit('nav:trophyDone');
     },
     nav(a) { if (a === 'confirm') window.Bus.emit('nav:trophyDone'); },
   };

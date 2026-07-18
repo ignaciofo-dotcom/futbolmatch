@@ -75,6 +75,9 @@ window.I18N_DATA = {
   'penalties.goal': { es: '¡GOL!', en: 'GOAL!' },
   'penalties.saved': { es: '¡ATAJADO!', en: 'SAVED!' },
   'penalties.miss': { es: '¡FUERA!', en: 'MISS!' },
+  'penalties.go': { es: '¡YA!', en: 'GO!' },
+
+  'rotate.msg': { es: 'Gira tu teléfono para jugar', en: 'Rotate your phone to play' },
 
   'result.victory': { es: '¡VICTORIA!', en: 'VICTORY!' },
   'result.defeat': { es: 'DERROTA', en: 'DEFEAT' },

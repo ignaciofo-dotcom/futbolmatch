@@ -430,6 +430,7 @@
 <tr><td>Pause</td><td><kbd>P</kbd> or <kbd>Esc</kbd></td><td><kbd>P</kbd> or <kbd>Esc</kbd></td><td></td></tr>
 <tr><td>Menu navigation</td><td><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> + <kbd>Enter</kbd> / <kbd>Esc</kbd></td><td>same</td><td>Mouse optional</td></tr>
 </table>
+<div class="fix"><b>Update:</b> touch support is now implemented (no longer future-only). The game auto-detects touch devices (<code>pointer: coarse</code> / touch points) and adds on-screen controls: a floating movement joystick plus Pass / Shoot / Lob / Switch / Sprint buttons, tappable ability slots and a pause button; menus, form fields, overlay buttons and penalty zones all become tap targets. Touch and keyboard feed the <em>same</em> abstract actions (§39 <code>input.js</code>), and a portrait-orientation prompt asks the user to rotate to landscape. See <code>js/core/touch.js</code>.</div>
 <h3>13.2 Context-Sensitive Actions</h3>
 <p>The two action keys change meaning by situation; the HUD key legend always shows the current meaning.</p>
 <table>

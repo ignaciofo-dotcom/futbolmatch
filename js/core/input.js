@@ -20,6 +20,12 @@ window.Input = (function () {
   const held = {};           // code -> true while down
   const edgeCodes = {};      // code -> count of unconsumed press-edges (survives keyup)
 
+  // Touch/virtual input feeds the SAME abstract actions as the keyboard, so gameplay code
+  // never needs to know the input source (keyboard, on-screen buttons, or a joystick).
+  const vHeld = {};          // action -> true while an on-screen button is held
+  const vEdge = {};          // action -> count of unconsumed virtual press-edges
+  let touchMove = null;      // {x,y} field-space move vector from the on-screen joystick
+
   let textMode = false;
   let textBuffer = '';
   let textCommit = null, textCancel = null;
@@ -60,9 +66,8 @@ window.Input = (function () {
 
   // held-state query for continuous actions (movement, sprint, charge)
   function isDown(action) {
-    const m = map();
-    const codes = m[action] || [];
-    return codes.some(c => held[c]);
+    const codes = map()[action] || [];
+    return codes.some(c => held[c]) || !!vHeld[action];
   }
 
   // edge query: true once per physical press
@@ -76,10 +81,12 @@ window.Input = (function () {
       // so quick taps (and several rapid taps within one frame) are never dropped.
       if (edgeCodes[c] > 0) { edgeCodes[c]--; return true; }
     }
+    if (vEdge[action] > 0) { vEdge[action]--; return true; }  // on-screen button press
     return false;
   }
 
   function moveVector() {
+    if (touchMove) return { x: touchMove.x, y: touchMove.y };  // on-screen joystick
     // Field coords: up (into screen) = +x toward opponent goal; right = +y.
     let x = 0, y = 0;
     if (isDown('up')) x += 1;
@@ -93,7 +100,15 @@ window.Input = (function () {
 
   // Mark every currently-held key as already-consumed so an in-flight press
   // (e.g. the Enter that caused a screen change) can't re-fire on the new screen.
-  function consumeAll() { for (const c in edgeCodes) edgeCodes[c] = 0; }
+  function consumeAll() { for (const c in edgeCodes) edgeCodes[c] = 0; for (const a in vEdge) vEdge[a] = 0; }
+
+  // ---- virtual (touch) input API, driven by the on-screen controls ----
+  function setVirtual(action, down) {
+    if (down) { if (!vHeld[action]) { vHeld[action] = true; vEdge[action] = (vEdge[action] || 0) + 1; } }
+    else vHeld[action] = false;
+  }
+  function setTouchMove(x, y) { touchMove = (x || y) ? { x, y } : null; }
+  function clearVirtual() { for (const a in vHeld) vHeld[a] = false; touchMove = null; }
 
   function setProfile(p) { if (profiles[p]) profile = p; }
   function getProfile() { return profile; }
@@ -103,5 +118,6 @@ window.Input = (function () {
   }
   function isTextMode() { return textMode; }
 
-  return { isDown, pressed, moveVector, setProfile, getProfile, beginText, isTextMode, actionsForCode, consumeAll };
+  return { isDown, pressed, moveVector, setProfile, getProfile, beginText, isTextMode, actionsForCode, consumeAll,
+           setVirtual, setTouchMove, clearVirtual };
 })();

@@ -40,6 +40,14 @@ Opening `index.html` directly via `file://` also works, except save data won't p
 
 A second profile (WASD + J/K, lob on L, switch on Space) is available in Settings.
 
+### On a phone
+
+The game **auto-detects touch devices** (no manual toggle) and shows on-screen controls: a
+floating movement joystick on the left and **Pase / Disparo / Globo / Cambiar / Sprint** buttons
+on the right, plus tappable ability slots and a pause button; every menu becomes tap-to-select.
+Play in landscape — if the phone is held in portrait, a prompt asks you to rotate (the pitch is 16:9).
+The same abstract input layer drives keyboard, touch, and (later) gamepad, so gameplay code is shared.
+
 ## Project layout
 
 ```
