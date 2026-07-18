@@ -55,6 +55,8 @@ window.I18N_DATA = {
   'hud.pause': { es: 'Pausa', en: 'Pause' },
   'hud.pressure': { es: 'Presión', en: 'Pressure' },
   'hud.catch': { es: 'Atajar', en: 'Catch' },
+  'hud.loft': { es: 'Globo', en: 'Lob' },
+  'hud.switch': { es: 'Cambiar', en: 'Switch' },
 
   'hydration_break': { es: 'PAUSA DE HIDRATACIÓN', en: 'HYDRATION BREAK' },
   'hydration.resume': { es: 'El partido se reanuda automáticamente', en: 'The match resumes automatically' },

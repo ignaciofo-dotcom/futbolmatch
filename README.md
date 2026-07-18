@@ -30,13 +30,15 @@ Opening `index.html` directly via `file://` also works, except save data won't p
 | --- | --- |
 | Move | Arrow keys |
 | Sprint | Shift (hold) |
-| Pass / pressure | Z |
+| Pass (auto-switches control to the receiver) / pressure | Z |
 | Shoot (hold to charge, aim with heading) / tackle | X |
+| Lofted / chip kick (pops the ball up to set up a bicycle kick) | C |
+| Switch player (when the other team has the ball) | Space |
 | Activate ability slot 1–5 | 1–5 |
 | Pause | P / Esc |
 | Menus | Arrows + Enter, Esc to go back |
 
-A second profile (WASD + J/K/L) is available in Settings.
+A second profile (WASD + J/K, lob on L, switch on Space) is available in Settings.
 
 ## Project layout
 

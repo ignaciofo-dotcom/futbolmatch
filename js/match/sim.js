@@ -39,6 +39,12 @@ window.Sim = (function () {
 
   // ---------------- user control ----------------
   function updateUser(match, p, dt) {
+    const hasBall = match.ball.owner === p;
+
+    // Manual player switch when off the ball: take control of the outfield teammate
+    // nearest the ball (e.g. to defend when the opponent has possession).
+    if (!hasBall && window.Input.pressed('switchPlayer')) { switchToBall(match); return; }
+
     const mv = window.Input.moveVector();
     const sprinting = window.Input.isDown('sprint') && p.stamina > 1;
     let sp = P.baseSpeed * speedFactor(p.attrs);
@@ -54,17 +60,50 @@ window.Sim = (function () {
       p.stamina = clamp(p.stamina - P.staminaSprintDrain * dt, 0, P.staminaMax);
     else p.stamina = clamp(p.stamina + P.staminaRegen * dt, 0, P.staminaMax);
 
-    const hasBall = match.ball.owner === p;
-
     // shooting via charge (hold X with ball); tackle via tap X without ball
     if (hasBall) {
       if (window.Input.isDown('action2')) { match.chargingShot = true; match.shotCharge = Math.min(B.maxShotCharge, (match.shotCharge || 0) + dt); }
       else if (match.chargingShot) { match.chargingShot = false; doShot(match, p, match.shotCharge / B.maxShotCharge); match.shotCharge = 0; }
       if (window.Input.pressed('action1')) doPass(match, p);
+      if (window.Input.pressed('loft')) doLoft(match, p);
     } else {
       match.chargingShot = false; match.shotCharge = 0;
       if (window.Input.pressed('action2')) doTackle(match, p);
     }
+  }
+
+  // ---------------- player switching ----------------
+  function switchControl(match, target) {
+    if (!target || target.team !== 'home' || target === match.userPlayer) return;
+    if (match.userPlayer) match.userPlayer.isUser = false;
+    target.isUser = true;
+    match.userPlayer = target;
+    match.chargingShot = false; match.shotCharge = 0;
+    window.Audio2.play('select');
+    window.Bus.emit('switchPlayer', { match, to: target });
+  }
+
+  // Take control of the outfield teammate nearest the ball; repeated presses cycle by proximity.
+  function switchToBall(match) {
+    const ball = match.ball;
+    const cands = match.homePlayers.filter(pl => !pl.isGK);
+    if (!cands.length) return;
+    cands.sort((a, b) => Math.hypot(a.x - ball.x, a.y - ball.y) - Math.hypot(b.x - ball.x, b.y - ball.y));
+    const idx = cands.indexOf(match.userPlayer);
+    switchControl(match, cands[(idx + 1) % cands.length]);
+  }
+
+  // Lofted / chip kick: pops the ball into the air (mostly upward) so it can be met with a
+  // bicycle kick. The small forward speed makes it drop back down close to the kicker.
+  function doLoft(match, p) {
+    const ball = match.ball;
+    if (ball.owner !== p) return;
+    const dx = Math.cos(p.facing), dy = Math.sin(p.facing);
+    ball.owner = null; ball.kickerCd = CFG.player.kickCooldown; p.kickCd = CFG.player.kickCooldown;
+    ball.vx = dx * B.loftForward; ball.vy = dy * B.loftForward; ball.vz = B.loftRise;
+    ball.lastTouch = p; ball.lastPasser = null;
+    window.Audio2.play('pass');
+    window.Bus.emit('loft', { match, from: p });
   }
 
   // ---------------- AI ----------------
@@ -184,8 +223,9 @@ window.Sim = (function () {
   function doPass(match, p) {
     const mate = bestPassTarget(match, p);
     if (!mate) return;
+    const wasUser = p.isUser;
     passTo(match, p, mate);
-    if (p.isUser) window.Scoring.add(match, 'pass');
+    if (wasUser) { window.Scoring.add(match, 'pass'); switchControl(match, mate); } // follow the pass
   }
 
   function passTo(match, p, mate) {
@@ -309,15 +349,21 @@ window.Sim = (function () {
     else if (ny > F.width - 0.3) { ball.y = F.width - 0.3; ball.vy = -Math.abs(ball.vy) * 0.5; }
     else ball.y = ny;
 
-    // end lines (x)
+    // end lines (x) — only score/restart during live play. Outside PLAY (e.g. the goal
+    // celebration) freeze the ball at the line instead, so a single goal can never be
+    // counted repeatedly frame-after-frame while the ball still sits past the line.
     if (nx <= 0) {
-      if (ball.z < 2.4 && inMouth(ball.y)) resolveGoalAttempt(match, 'home', 'away');
-      else goalKick(match, 'home');
+      if (match.phase === 'PLAY') {
+        if (ball.z < 2.4 && inMouth(ball.y)) resolveGoalAttempt(match, 'home', 'away');
+        else goalKick(match, 'home');
+      } else { ball.x = 0.6; ball.vx = 0; ball.vy *= 0.4; }
       return;
     }
     if (nx >= F.length) {
-      if (ball.z < 2.4 && inMouth(ball.y)) resolveGoalAttempt(match, 'away', 'home');
-      else goalKick(match, 'away');
+      if (match.phase === 'PLAY') {
+        if (ball.z < 2.4 && inMouth(ball.y)) resolveGoalAttempt(match, 'away', 'home');
+        else goalKick(match, 'away');
+      } else { ball.x = F.length - 0.6; ball.vx = 0; ball.vy *= 0.4; }
       return;
     }
     ball.x = nx;

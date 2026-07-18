@@ -49,6 +49,8 @@ window.CONFIG = {
     shotSpeed: 34,
     maxShotCharge: 1.6,       // seconds to full charge
     radius: 0.4,
+    loftRise: 11,             // upward velocity of a lofted/chip kick (sets up the bicycle kick)
+    loftForward: 2.8,         // small forward velocity so the ball drops back near the kicker
   },
 
   ability: {

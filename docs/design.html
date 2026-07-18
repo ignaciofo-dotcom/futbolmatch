@@ -357,7 +357,7 @@
 <p><span class="tag mvp">MVP</span> skin tone, hair color, shirt style, shirt number.<br>
 <span class="tag post">Post-MVP</span> hair styles, face types, boots, gloves, wristbands, celebrations, accessories.</p>
 <h3>8.3 Playing Positions</h3>
-<p>Goalkeeper, Defender, Midfielder, Forward. The user controls only one footballer for the entire match and can never switch to another footballer.</p>
+<p>Goalkeeper, Defender, Midfielder, Forward. The player's chosen position sets their starting role and attributes. Control normally stays with that footballer, but the user may hand control to a teammate — passing auto-switches to the receiver, and <kbd>Space</kbd> takes control of the outfield teammate nearest the ball when defending (§13.1). This keeps the user connected to the play instead of watching AI teammates handle the ball.</p>
 <h3>8.4 Position Primary Attributes</h3>
 <table>
 <tr><th>Position</th><th>Primary attributes</th></tr>
@@ -424,7 +424,8 @@
 <tr><td>Sprint</td><td><kbd>Shift</kbd> (hold)</td><td><kbd>Shift</kbd> (hold)</td><td>Drains stamina</td></tr>
 <tr><td>Action 1 — Pass / context</td><td><kbd>Z</kbd></td><td><kbd>J</kbd></td><td>See §13.2</td></tr>
 <tr><td>Action 2 — Shoot / Tackle</td><td><kbd>X</kbd></td><td><kbd>K</kbd></td><td>Hold to charge shot power</td></tr>
-<tr><td>Request pass (off the ball)</td><td><kbd>C</kbd></td><td><kbd>L</kbd></td><td>Asks AI teammate to pass</td></tr>
+<tr><td>Lofted / chip kick</td><td><kbd>C</kbd></td><td><kbd>L</kbd></td><td>Pops the ball into the air — the setup for a bicycle kick (§16.5)</td></tr>
+<tr><td>Switch player</td><td><kbd>Space</kbd></td><td><kbd>Space</kbd></td><td>Take control of the teammate nearest the ball; a pass also auto-switches to the receiver</td></tr>
 <tr><td>Activate ability slot 1–5</td><td><kbd>1</kbd>–<kbd>5</kbd></td><td><kbd>1</kbd>–<kbd>5</kbd></td><td>Matches HUD slots</td></tr>
 <tr><td>Pause</td><td><kbd>P</kbd> or <kbd>Esc</kbd></td><td><kbd>P</kbd> or <kbd>Esc</kbd></td><td></td></tr>
 <tr><td>Menu navigation</td><td><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> + <kbd>Enter</kbd> / <kbd>Esc</kbd></td><td>same</td><td>Mouse optional</td></tr>
@@ -497,6 +498,7 @@
 <p><strong>If conditions are not met, the ability is NOT consumed</strong> and a short message is shown —
 ES: <em>«Acércate a un balón aéreo para usar la chilenita.»</em> ·
 EN: <em>“Move near an aerial ball to use the bicycle kick.”</em></p>
+<p>To create the aerial ball on demand, the player has a <strong>lofted / chip kick</strong> (<kbd>C</kbd>, or <kbd>L</kbd> on WASD): it pops the ball almost straight up with a little forward drift so it falls back within reach, giving a window to activate the Chilenita. Without this there was no reliable way to raise the ball with the keyboard.</p>
 
 <h2 id="s17">17. Ability Availability by Position</h2>
 <div class="fix"><b>Correction:</b> the original used a Yes/Limited/No table that contradicted its own JSON example (the table allowed Bicycle Kick as "Limited" for Defenders, but the JSON's <code>allowedPositions</code> excluded them). Both are replaced by one mechanism: <strong>per-position spawn weights</strong> (0 = never appears, low = rare, high = common). The table below is the single source of truth and is stored directly in each ability's config.</div>

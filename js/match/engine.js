@@ -259,6 +259,8 @@ window.MatchEngine = (function () {
     window.Audio2.play('goal');
     showBanner(match, 'msg.goal', 2.2);
     window.Bus.emit('goal', { match, scoringSide });
+    // Park the ball so it stops crossing the line during the celebration.
+    match.ball.owner = null; match.ball.vx = match.ball.vy = match.ball.vz = 0;
     setPhase(match, 'GOAL', CFG.match.goalCelebration);
   }
 

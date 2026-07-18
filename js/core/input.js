@@ -4,13 +4,13 @@ window.Input = (function () {
   const profiles = {
     ARROWS: {
       up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'],
-      action1: ['KeyZ'], action2: ['KeyX'], requestPass: ['KeyC'], sprint: ['ShiftLeft', 'ShiftRight'],
+      action1: ['KeyZ'], action2: ['KeyX'], loft: ['KeyC'], switchPlayer: ['Space'], sprint: ['ShiftLeft', 'ShiftRight'],
       slots: ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'],
       pause: ['KeyP', 'Escape'], confirm: ['Enter'], back: ['Escape'], quit: ['KeyQ'],
     },
     WASD: {
       up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'],
-      action1: ['KeyJ'], action2: ['KeyK'], requestPass: ['KeyL'], sprint: ['ShiftLeft', 'ShiftRight'],
+      action1: ['KeyJ'], action2: ['KeyK'], loft: ['KeyL'], switchPlayer: ['Space'], sprint: ['ShiftLeft', 'ShiftRight'],
       slots: ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'],
       pause: ['KeyP', 'Escape'], confirm: ['Enter'], back: ['Escape'], quit: ['KeyQ'],
     },

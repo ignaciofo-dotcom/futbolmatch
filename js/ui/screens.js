@@ -335,11 +335,15 @@ window.UI = (function () {
     }
     // stamina
     $('hud-stamina').style.width = Math.max(0, match.userPlayer.stamina) + '%';
-    // legend
+    // legend — keys shown for the current control profile, actions for the current situation
     const hasBall = match.ball.owner === match.userPlayer;
-    $('hud-legend').innerHTML = `<span><b>Z</b> ${t(hasBall ? 'hud.pass' : 'hud.pressure')}</span>
-      <span><b>X</b> ${t(hasBall ? 'hud.shoot' : 'hud.tackle')}</span>
-      <span><b>⇧</b> ${t('hud.sprint')}</span><span><b>P</b> ${t('hud.pause')}</span>`;
+    const wasd = window.Input.getProfile() === 'WASD';
+    const K = wasd ? { a1: 'J', a2: 'K', loft: 'L' } : { a1: 'Z', a2: 'X', loft: 'C' };
+    $('hud-legend').innerHTML = hasBall
+      ? `<span><b>${K.a1}</b> ${t('hud.pass')}</span><span><b>${K.a2}</b> ${t('hud.shoot')}</span>
+         <span><b>${K.loft}</b> ${t('hud.loft')}</span><span><b>⇧</b> ${t('hud.sprint')}</span>`
+      : `<span><b>${K.a2}</b> ${t('hud.tackle')}</span><span><b>Space</b> ${t('hud.switch')}</span>
+         <span><b>⇧</b> ${t('hud.sprint')}</span><span><b>P</b> ${t('hud.pause')}</span>`;
     // banner / toast
     const banner = $('hud-banner'), toast = $('hud-toast');
     if (match.banner) { banner.textContent = t(match.banner); banner.classList.remove('hidden'); } else banner.classList.add('hidden');
