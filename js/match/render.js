@@ -5,7 +5,8 @@ window.Renderer = (function () {
   let canvas, ctx, W = 1280, H = 720;
 
   // projection params
-  const HORIZON = 196, GROUND_BOTTOM = 706, D_FAR = 2.35, DEPTH = D_FAR - 1;
+  // D_FAR = far-end scale denominator; lower = flatter perspective so far players aren't tiny.
+  const HORIZON = 196, GROUND_BOTTOM = 706, D_FAR = 2.0, DEPTH = D_FAR - 1;
   const NEAR_HALF_W = 660;          // pitch half-width in px at the near (bottom) edge
   const HSPREAD = NEAR_HALF_W / (F.width / 2);
   const HEIGHT_PX = 17;             // px per metre of ball/player height at near scale
@@ -164,7 +165,7 @@ window.Renderer = (function () {
 
   function drawPlayer(match, p) {
     const feet = project(p.x, p.y, 0);
-    const s = feet.s;
+    const s = feet.s * 1.4;   // enlarge the figure (esp. far players) without moving its ground anchor
     const H0 = 30 * s; // figure height px
     const col1 = p.colors[0], col2 = p.colors[1];
     // screen-space facing nub direction (+x field = up, +y field = right)
@@ -238,7 +239,7 @@ window.Renderer = (function () {
   function drawBall(match, ball) {
     const ground = project(ball.x, ball.y, 0);
     const air = project(ball.x, ball.y, ball.z);
-    const s = ground.s;
+    const s = ground.s * 1.3;
     // shadow
     ctx.fillStyle = 'rgba(0,0,0,.3)';
     ctx.beginPath(); ctx.ellipse(ground.x, ground.y, 7 * s, 2.6 * s, 0, 0, 7); ctx.fill();

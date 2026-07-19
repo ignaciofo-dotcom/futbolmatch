@@ -17,11 +17,13 @@ kbd{display:inline-block;min-width:1.5em;text-align:center;padding:1px 6px;margi
   border-radius:5px;font-size:.82em;font-weight:700;color:#fff}
 
 /* ===== Screens (DOM overlays over canvas) ===== */
-.screen{position:absolute;inset:0;margin:auto;width:min(100vw,177.78vh);height:min(56.25vw,100vh);width:min(100dvw,177.78dvh);height:min(56.25dvw,100dvh);
-  display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:18px;
+/* Menu/DOM screens use the FULL visible viewport (not a 16:9 letterbox) so there is room to
+   lay out and, if a screen is still taller than the view, to scroll. */
+.screen{position:absolute;inset:0;width:100vw;height:100vh;width:100dvw;height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:16px;
   background:radial-gradient(ellipse at 50% 0%, #16294f 0%, #050b18 72%);
   overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  padding:max(4%,env(safe-area-inset-top)) max(6%,env(safe-area-inset-right)) max(4%,env(safe-area-inset-bottom)) max(6%,env(safe-area-inset-left));
+  padding:max(3%,env(safe-area-inset-top)) max(6%,env(safe-area-inset-right)) max(3%,env(safe-area-inset-bottom)) max(6%,env(safe-area-inset-left));
   z-index:10}
 .screen h1{font-size:clamp(1.6rem,4.5vw,3rem);color:var(--gold);letter-spacing:.05em;margin:0;text-align:center;
   text-shadow:0 0 24px rgba(245,197,66,.4)}
@@ -150,8 +152,9 @@ kbd{display:inline-block;min-width:1.5em;text-align:center;padding:1px 6px;margi
   font-size:clamp(.8rem,2vw,1.1rem);text-shadow:0 2px 8px #000}
 
 /* ===== overlays (match) ===== */
-.overlay{position:absolute;inset:0;margin:auto;width:min(100vw,177.78vh);height:min(56.25vw,100vh);width:min(100dvw,177.78dvh);height:min(56.25dvw,100dvh);
-  display:flex;align-items:center;justify-content:center;background:rgba(3,7,16,.72);z-index:9}
+.overlay{position:absolute;inset:0;width:100vw;height:100vh;width:100dvw;height:100dvh;
+  display:flex;align-items:center;justify-content:center;background:rgba(3,7,16,.72);z-index:9;
+  overflow-y:auto;padding:12px}
 .overlay .panel{background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:22px 30px;
   text-align:center;min-width:300px;max-width:80%}
 .overlay .panel.wide{min-width:440px}
@@ -177,7 +180,11 @@ kbd{display:inline-block;min-width:1.5em;text-align:center;padding:1px 6px;margi
 .pen-msg.goal{color:var(--green)} .pen-msg.saved,.pen-msg.miss{color:var(--red)}
 
 /* ===== Touch / mobile ===== */
-body.touch{touch-action:none;overscroll-behavior:none}
+/* Block page bounce/zoom, but DON'T disable touch-action globally — that would also kill
+   scrolling on the menu screens. Zoom is already blocked via the viewport meta. */
+body.touch{overscroll-behavior:none}
+body.touch #pitch,body.touch #hud,body.touch #touch-match{touch-action:none}
+body.touch .screen{touch-action:pan-y}
 /* overlay tap buttons (also clickable with a mouse) */
 .ov-btn{display:inline-block;margin-top:12px;padding:10px 24px;border-radius:10px;font-weight:800;letter-spacing:.02em;
   background:#12336e;border:2px solid var(--blue);color:#fff;cursor:pointer;user-select:none}
@@ -202,17 +209,18 @@ body.touch #touch-match.visible{display:block}
   border:2px solid rgba(255,255,255,.35);background:rgba(8,20,40,.4);pointer-events:none}
 #tc-thumb{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;
   background:radial-gradient(circle at 35% 35%,#7dd3fc,#2563eb);border:2px solid rgba(255,255,255,.6)}
-#tc-buttons{position:absolute;right:2%;bottom:5%;width:240px;height:210px;pointer-events:none}
+/* smaller + translucent so players underneath stay visible */
+#tc-buttons{position:absolute;right:1%;bottom:3%;width:186px;height:158px;pointer-events:none}
 .tc-btn{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;color:#fff;
-  font-weight:800;font-size:.72rem;letter-spacing:.02em;text-align:center;user-select:none;
-  background:rgba(18,42,85,.85);border:2px solid #3c62a8;box-shadow:0 2px 8px #0006;
+  font-weight:800;font-size:.58rem;letter-spacing:.01em;text-align:center;user-select:none;line-height:1.05;
+  background:rgba(18,42,85,.52);border:2px solid rgba(120,150,210,.75);box-shadow:0 2px 6px #0005;
   display:flex;align-items:center;justify-content:center}
-.tc-btn.vpress{transform:scale(.9);filter:brightness(1.35)}
-.tc-btn.shoot{right:6px;bottom:14px;width:84px;height:84px;font-size:.8rem;background:rgba(150,32,32,.9);border-color:var(--red)}
-.tc-btn.pass{right:86px;bottom:60px;width:66px;height:66px;background:rgba(24,96,54,.9);border-color:var(--green)}
-.tc-btn.loft{right:26px;bottom:106px;width:60px;height:60px;background:rgba(150,102,20,.9);border-color:var(--gold)}
-.tc-btn.switch{right:132px;bottom:6px;width:58px;height:58px}
-.tc-btn.sprint{right:160px;bottom:84px;width:60px;height:60px;background:rgba(50,70,110,.9)}
+.tc-btn.vpress{transform:scale(.9);filter:brightness(1.4);background:rgba(18,42,85,.8)}
+.tc-btn.shoot{right:4px;bottom:8px;width:64px;height:64px;font-size:.64rem;background:rgba(150,32,32,.55);border-color:rgba(239,68,68,.85)}
+.tc-btn.pass{right:66px;bottom:44px;width:52px;height:52px;background:rgba(24,96,54,.55);border-color:rgba(52,211,153,.85)}
+.tc-btn.loft{right:16px;bottom:74px;width:48px;height:48px;background:rgba(150,102,20,.55);border-color:rgba(245,158,11,.85)}
+.tc-btn.switch{right:104px;bottom:4px;width:48px;height:48px}
+.tc-btn.sprint{right:120px;bottom:58px;width:48px;height:48px;background:rgba(50,70,110,.55)}
 .tc-pause{position:absolute;top:2%;left:50%;transform:translateX(-50%);pointer-events:auto;touch-action:none;
   width:44px;height:34px;border-radius:8px;border:1px solid var(--line);background:rgba(6,14,32,.85);color:#fff;font-size:1rem}
 
@@ -242,3 +250,21 @@ body.touch.in-match #fs-btn{display:none}
   background:rgba(6,14,32,.95);border:1px solid var(--line);border-radius:12px;padding:12px 18px;
   color:var(--text);font-size:.86rem;line-height:1.4;text-align:center;display:none}
 #fs-hint.show{display:block}
+
+/* compact layout for short (phone-in-landscape) screens so nothing is cut off */
+@media (max-height:480px){
+  .screen{gap:9px}
+  .screen h1{font-size:clamp(1.1rem,4.5vw,1.9rem)}
+  .screen h2{font-size:clamp(.95rem,3.6vw,1.35rem)}
+  .btn{padding:8px 18px}
+  .menu-buttons{gap:8px}
+  .field{padding:6px 14px}
+  .form-box{gap:6px}
+  .create-layout{gap:4%}
+  .avatar-box{min-height:0;padding:10px}
+  .avatar .head{width:34px;height:34px}.avatar .shirt{width:58px;height:48px;font-size:1.1rem}
+  .prematch-teams{gap:5%}.prematch-teams .flag{font-size:1.7rem}
+  .result-inner{gap:6px}.result-body{gap:4%}
+  .ball-logo{font-size:clamp(1.8rem,7vw,3.2rem)}
+  .trophy-card{padding:8px 12px}
+}
