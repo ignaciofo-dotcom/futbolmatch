@@ -78,6 +78,11 @@ window.I18N_DATA = {
   'penalties.go': { es: '¡YA!', en: 'GO!' },
 
   'rotate.msg': { es: 'Gira tu teléfono para jugar', en: 'Rotate your phone to play' },
+  'fs.toggle': { es: 'Pantalla completa', en: 'Fullscreen' },
+  'fs.hint': {
+    es: 'Para pantalla completa en iPhone: toca Compartir y luego «Añadir a inicio», y abre el juego desde el icono.',
+    en: 'For fullscreen on iPhone: tap Share, then "Add to Home Screen", and open the game from the icon.'
+  },
 
   'result.victory': { es: '¡VICTORIA!', en: 'VICTORY!' },
   'result.defeat': { es: 'DERROTA', en: 'DEFEAT' },

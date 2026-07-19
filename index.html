@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050b18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Camino a la Copa">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Camino a la Copa</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>⚽</text></svg>">
 <link rel="stylesheet" href="css/ui.css">
@@ -131,6 +137,7 @@
       <div class="hint"><kbd>P</kbd>/<kbd>Esc</kbd> <span data-i18n="pause.resume">reanudar</span> · <kbd>Q</kbd> <span data-i18n="pause.quit">abandonar partido</span></div>
       <div class="ov-row">
         <div class="ov-btn" data-vkey="pause" data-i18n="pause.resume">reanudar</div>
+        <div class="ov-btn" id="fs-toggle" data-i18n="fs.toggle">pantalla completa</div>
         <div class="ov-btn danger" data-vkey="quit" data-i18n="pause.quit">abandonar</div>
       </div>
     </div>
@@ -157,6 +164,10 @@
   <div id="rotate">
     <div class="rot-inner"><div class="rot-icon">📱</div><span data-i18n="rotate.msg">Gira tu teléfono para jugar</span></div>
   </div>
+
+  <!-- Fullscreen toggle (touch) and a hint for platforms without the Fullscreen API (iPhone) -->
+  <div id="fs-btn" aria-label="fullscreen">⛶</div>
+  <div id="fs-hint"></div>
 </div>
 
 <script src="js/data/config.js"></script>

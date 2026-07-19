@@ -48,6 +48,12 @@ on the right, plus tappable ability slots and a pause button; every menu becomes
 Play in landscape — if the phone is held in portrait, a prompt asks you to rotate (the pitch is 16:9).
 The same abstract input layer drives keyboard, touch, and (later) gamepad, so gameplay code is shared.
 
+The layout auto-fits the **visible** screen (it uses dynamic viewport units, so the browser's
+address/tab bars never cut off the game), and any screen taller than the view scrolls instead of
+clipping. A **⛶ fullscreen** button (top-right on touch, and in the pause menu) toggles fullscreen
+where the browser supports it; on iPhone Safari (no Fullscreen API) it explains how to “Add to Home
+Screen”, which launches the game fullscreen via the included web-app manifest.
+
 ## Project layout
 
 ```

@@ -77,6 +77,32 @@ window.TouchUI = (function () {
   // ---- show/hide the match controls with the match phase ----
   function setVisible(on) { if (wrap) wrap.classList.toggle('visible', on); if (!on) window.Input.setTouchMove(0, 0); }
 
+  // ---- fullscreen toggle ----
+  function fsSupported() {
+    const d = document.documentElement;
+    return !!(d.requestFullscreen || d.webkitRequestFullscreen);
+  }
+  function inFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+  function toggleFullscreen() {
+    if (!fsSupported()) { showFsHint(); return; }   // e.g. iPhone Safari — guide to Add to Home Screen
+    let pr;
+    if (inFullscreen()) pr = (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else { const d = document.documentElement; pr = (d.requestFullscreen || d.webkitRequestFullscreen).call(d); }
+    if (pr && pr.catch) pr.catch(() => {});   // ignore permission/gesture rejections
+  }
+  function updateFsIcon() {
+    const b = document.getElementById('fs-btn');
+    if (b) b.textContent = inFullscreen() ? '⤡' : '⛶';
+  }
+  let fsHintT = null;
+  function showFsHint() {
+    const h = document.getElementById('fs-hint');
+    if (!h) return;
+    h.textContent = window.I18N ? window.I18N.t('fs.hint') : '';
+    h.classList.add('show');
+    clearTimeout(fsHintT); fsHintT = setTimeout(() => h.classList.remove('show'), 5000);
+  }
+
   function init() {
     if (isTouch) document.body.classList.add('touch');
     build();
@@ -92,9 +118,21 @@ window.TouchUI = (function () {
       if (e.target.closest && e.target.closest('.touch-back')) window.Bus.emit('nav:back');
     });
 
-    window.Bus.on('stateChanged', (s) => { if (s !== 'MATCH') { setVisible(false); window.Input.clearVirtual(); } });
+    window.Bus.on('stateChanged', (s) => {
+      document.body.classList.toggle('in-match', s === 'MATCH');
+      if (s !== 'MATCH') { setVisible(false); window.Input.clearVirtual(); }
+    });
     window.Bus.on('phaseChange', ({ phase }) => setVisible(phase === 'PLAY' || phase === 'INTRO' || phase === 'GOAL'));
     window.Bus.on('langChanged', () => { if (wrap && window.I18N) window.I18N.refresh(wrap); });
+
+    // fullscreen toggle button + the in-match toggle inside the pause overlay
+    const fsBtn = document.getElementById('fs-btn');
+    if (fsBtn) fsBtn.addEventListener('click', toggleFullscreen);
+    const fsToggle = document.getElementById('fs-toggle');
+    if (fsToggle) fsToggle.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', updateFsIcon);
+    document.addEventListener('webkitfullscreenchange', updateFsIcon);
+    updateFsIcon();
   }
 
   return { init, isTouch };
