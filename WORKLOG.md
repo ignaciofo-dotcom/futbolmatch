@@ -60,10 +60,18 @@ Renderer is now **top-down horizontal**: x→screen-horizontal, y→screen-verti
 ---
 
 ## History (done)
+- **Universal "control the ball holder" rule**: `sim.step` ends with a single rule — if a **home**
+  player owns the ball and isn't the current `userPlayer`, `switchControl` to them. This means you
+  always control whichever of your players holds the ball, no matter how they got it (kickoff, pass,
+  tackle, interception, loose ball); opponents holding the ball never steal your control. Replaced the
+  earlier fragile flag-based `passSwitchActive`/`passSwitchT` handoff (removed from `step`, `doPass`,
+  `kickoffKick`, `handlePossession`). `doPass` still switches to the aimed teammate immediately for
+  responsiveness; the universal rule confirms/corrects it when the ball actually arrives. Verified with
+  Playwright drives (`scratchpad/drive_kickoff.js`, `drive_pass.js`, `drive_owner.js`): kickoff pass,
+  mid-play directional pass (kb + touch), AI teammate acquiring the ball, and opponent possession.
 - **Match polish**: players are now little animated footballers (shirt body, head+hair, swinging
   legs/arms via `p.animPhase`), bigger; the kickoff aim arrow is a glowing gold chevron arrow
-  (`render.drawAim`); the touch D-pad buttons sit closer together; auto-switch-to-receiver on a pass
-  confirmed working (`sim.doPass` → `switchControl`).
+  (`render.drawAim`); the touch D-pad buttons sit closer together.
 - **Match redesign (all 13 backlog items above)**: top-down horizontal pitch, 4-a-side with bigger
   players, own-half kickoff with an aim-and-kick arrow, working goalkeeper saves + GK control,
   N/E/W/S touch D-pad, new ability set (Super Tiro 🔥 / Rabona 🌀 / Bicicleta 🚲) shown as bare

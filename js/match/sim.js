@@ -23,7 +23,6 @@ window.Sim = (function () {
 
   function step(match, dt) {
     match.ball.kickerCd = Math.max(0, match.ball.kickerCd - dt);
-    if (match.passSwitchT > 0) { match.passSwitchT -= dt; if (match.passSwitchT <= 0) match.passSwitchActive = false; }
     for (const p of match.players) { p.kickCd = Math.max(0, p.kickCd - dt); p.tackleCd = Math.max(0, p.tackleCd - dt); if (p.lungeT > 0) p.lungeT -= dt; if (p.diveT > 0) p.diveT -= dt; }
 
     // decide + move players
@@ -34,6 +33,12 @@ window.Sim = (function () {
     }
     handlePossession(match, dt);
     updateBall(match, dt);
+
+    // UNIVERSAL RULE: you always control whichever of YOUR players holds the ball,
+    // no matter how they got it (kickoff, pass, tackle, interception, loose ball).
+    // switchControl is idempotent, so this is a no-op when nothing changed.
+    const owner = match.ball.owner;
+    if (owner && owner.team === 'home' && owner !== match.userPlayer) switchControl(match, owner);
   }
 
   function stepBallOnly(match, dt) { updateBall(match, dt); }
@@ -125,8 +130,6 @@ window.Sim = (function () {
     ball.lastTouch = k; ball.lastPasser = k; ball.kickerCd = CFG.player.kickCooldown; k.kickCd = CFG.player.kickCooldown;
     window.Audio2.play(type === 'shot' ? 'shot' : 'pass');
     match.kickoffKicker = null;
-    // the kickoff is a pass too: take control of whichever teammate receives it
-    if (match.kickingSide === 'home') { match.passSwitchActive = true; match.passSwitchT = 4; }
     window.MatchEngine.showBanner(match, 'msg.kickoff', 0.9);
     window.MatchEngine.setPhase(match, 'PLAY');
   }
@@ -255,8 +258,6 @@ window.Sim = (function () {
     if (best) {
       const prevTeam = ball.lastTouch ? ball.lastTouch.team : null;
       ball.owner = best; best.kickCd = 0.05;
-      // after a user pass, take control of whoever actually receives the ball
-      if (match.passSwitchActive) { if (best.team === 'home') switchControl(match, best); match.passSwitchActive = false; }
       if (prevTeam && prevTeam !== best.team) {
         // recovery/interception
         if (best.isUser) window.Scoring.add(match, ball.z > 0.1 ? 'interception' : 'recovery');
@@ -273,8 +274,10 @@ window.Sim = (function () {
     if (!mate) return;
     passTo(match, p, mate);
     window.Scoring.add(match, 'pass');
-    switchControl(match, mate);                    // follow the pass to the aimed teammate...
-    match.passSwitchActive = true; match.passSwitchT = 3; // ...and re-attach to whoever actually receives it
+    // Switch to the intended receiver right away for responsiveness; the universal
+    // ball-owner rule in step() then confirms control when the ball actually arrives
+    // (and corrects it if someone else ends up with it).
+    switchControl(match, mate);
   }
 
   // Pick the teammate most in line with the passer's facing (so "turn toward #8, pass" reaches #8).
