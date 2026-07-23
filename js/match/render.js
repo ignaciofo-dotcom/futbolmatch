@@ -77,26 +77,57 @@ window.Renderer = (function () {
     ctx.fillText(c.icon, P.x, P.y + bob);
   }
 
+  const SKIN = ['#f2c9a0', '#e0ac69', '#c68642', '#8d5524'];
+  const HAIR = ['#2b1c10', '#5b3b1a', '#111111', '#caa04a'];
+
+  // Little top-down footballer: shadow, swinging legs+arms (run cycle), shirt body, head+hair, number.
   function drawPlayer(match, p) {
     const P = project(p.x, p.y, 0);
-    const r = M(1.95);
-    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(P.x, P.y + r * 0.55, r * 1.05, r * 0.5, 0, 0, 7); ctx.fill();
+    const u = M(1), r = 2.3 * u;                                   // body radius (bigger characters)
+    const fx = Math.cos(p.facing), fy = Math.sin(p.facing), px = -fy, py = fx;
+    const moving = Math.hypot(p.vx || 0, p.vy || 0);
+    const swing = Math.sin((p.animPhase || 0) * Math.PI * 2) * Math.min(1, moving / 4.5);
+
+    ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.beginPath(); ctx.ellipse(P.x, P.y + r * 0.5, r * 1.15, r * 0.5, 0, 0, 7); ctx.fill();
+
     if (p.isUser) {
-      const gl = ctx.createRadialGradient(P.x, P.y, r * 0.3, P.x, P.y, r * 2);
+      const gl = ctx.createRadialGradient(P.x, P.y, r * 0.3, P.x, P.y, r * 2.1);
       gl.addColorStop(0, 'rgba(125,211,252,.34)'); gl.addColorStop(1, 'rgba(125,211,252,0)');
-      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(P.x, P.y, r * 2, 0, 7); ctx.fill();
-      ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = M(0.35); ctx.beginPath(); ctx.arc(P.x, P.y, r + M(0.5), 0, 7); ctx.stroke();
+      ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(P.x, P.y, r * 2.1, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 0.4 * u; ctx.beginPath(); ctx.ellipse(P.x, P.y + r * 0.5, r * 1.15, r * 0.5, 0, 0, 7); ctx.stroke();
       const eff = Object.keys(match.activeEffects || {})[0];
-      if (eff && window.ABILITIES[eff]) { ctx.strokeStyle = window.ABILITIES[eff].color; ctx.lineWidth = M(0.3); ctx.beginPath(); ctx.arc(P.x, P.y, r + M(1.1), 0, 7); ctx.stroke(); }
+      if (eff && window.ABILITIES[eff]) { ctx.strokeStyle = window.ABILITIES[eff].color; ctx.lineWidth = 0.35 * u; ctx.beginPath(); ctx.arc(P.x, P.y, r * 1.45, 0, 7); ctx.stroke(); }
     }
-    const g = ctx.createRadialGradient(P.x - r * 0.4, P.y - r * 0.4, r * 0.2, P.x, P.y, r);
-    g.addColorStop(0, shade(p.colors[0], 28)); g.addColorStop(1, p.colors[1]);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(P.x, P.y, r, 0, 7); ctx.fill();
-    ctx.lineWidth = M(0.18); ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.stroke();
-    if (p.isGK) { ctx.strokeStyle = '#fde047'; ctx.lineWidth = M(0.28); ctx.beginPath(); ctx.arc(P.x, P.y, r * 0.66, 0, 7); ctx.stroke(); }
-    const fx = Math.cos(p.facing), fy = Math.sin(p.facing);
-    ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.beginPath(); ctx.arc(P.x + fx * r * 0.78, P.y + fy * r * 0.78, r * 0.24, 0, 7); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(r * 1.05)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.number, P.x, P.y);
+
+    // legs (animated)
+    ctx.strokeStyle = shade(p.colors[1], -30); ctx.lineWidth = 0.6 * u; ctx.lineCap = 'round';
+    for (const side of [-1, 1]) {
+      const bx = P.x + px * side * r * 0.42, by = P.y + py * side * r * 0.42, sw = swing * side;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + fx * (r * 0.75 + sw * r * 0.7), by + fy * (r * 0.75 + sw * r * 0.7)); ctx.stroke();
+    }
+
+    // body (shirt) + arms, oriented to facing
+    ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(p.facing);
+    const g = ctx.createLinearGradient(-r, -r, r, r); g.addColorStop(0, shade(p.colors[0], 34)); g.addColorStop(1, p.colors[1]);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, r * 1.02, r * 0.9, 0, 0, 7); ctx.fill();
+    ctx.lineWidth = 0.22 * u; ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.stroke();
+    ctx.strokeStyle = shade(p.colors[0], 16); ctx.lineWidth = 0.5 * u; ctx.lineCap = 'round';
+    for (const side of [-1, 1]) { const sw = -swing * side; ctx.beginPath(); ctx.moveTo(r * 0.15, side * r * 0.72); ctx.lineTo(r * 0.15 + sw * r * 0.6, side * r * 1.15); ctx.stroke(); }
+    ctx.restore();
+
+    if (p.isGK) { ctx.strokeStyle = '#fde047'; ctx.lineWidth = 0.3 * u; ctx.beginPath(); ctx.arc(P.x, P.y, r * 0.78, 0, 7); ctx.stroke(); }
+
+    // number on the shirt (toward the back so the head doesn't cover it)
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = `bold ${Math.round(r * 0.8)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(p.number, P.x - fx * r * 0.28, P.y - fy * r * 0.28);
+
+    // head + hair at the front (shows facing)
+    const hx = P.x + fx * r * 0.5, hy = P.y + fy * r * 0.5, hr = r * 0.5;
+    ctx.fillStyle = SKIN[(p.appearance && p.appearance.skin) || 1]; ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 7); ctx.fill();
+    ctx.fillStyle = HAIR[(p.appearance && p.appearance.hair) || 0]; ctx.beginPath(); ctx.arc(hx - fx * hr * 0.4, hy - fy * hr * 0.4, hr * 0.9, 0, 7); ctx.fill();
+    ctx.lineWidth = 0.2 * u; ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 7); ctx.stroke();
+
+    if (p.bicycleT > 0) { p.bicycleT -= 1 / 60; ctx.globalAlpha = Math.max(0, p.bicycleT); ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.4 * u; ctx.beginPath(); ctx.arc(P.x, P.y, r * 1.7, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
   }
 
   function drawBall(match, ball) {
@@ -114,14 +145,29 @@ window.Renderer = (function () {
     ctx.fillStyle = '#0f172a'; ctx.font = `${Math.round(r * 1.1)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⬡', air.x, air.y);
   }
 
+  // Glowing gold aim arrow with chevrons that flow toward the target and a bright head.
   function drawAim(match) {
     const k = match.kickoffKicker; if (!k) return;
-    const P = project(k.x, k.y, 0), a = match.kickoffAim || 0, len = M(11);
-    ctx.strokeStyle = 'rgba(245,197,66,.95)'; ctx.lineWidth = M(0.45);
-    const ex = P.x + Math.cos(a) * len, ey = P.y + Math.sin(a) * len;
-    ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(ex, ey); ctx.stroke();
-    ctx.fillStyle = 'rgba(245,197,66,.95)'; ctx.save(); ctx.translate(ex, ey); ctx.rotate(a);
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-M(1.8), -M(1)); ctx.lineTo(-M(1.8), M(1)); ctx.closePath(); ctx.fill(); ctx.restore();
+    const P = project(k.x, k.y, 0), a = match.kickoffAim || 0, u = M(1), len = 13 * u, t = performance.now() / 1000;
+    ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(a);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    // soft glow shaft
+    ctx.strokeStyle = 'rgba(245,197,66,.22)'; ctx.lineWidth = 1.6 * u;
+    ctx.beginPath(); ctx.moveTo(1.5 * u, 0); ctx.lineTo(len - 1.5 * u, 0); ctx.stroke();
+    // flowing chevrons
+    const n = 4;
+    for (let i = 0; i < n; i++) {
+      const f = ((t * 1.4 + i / n) % 1), x = 2.5 * u + f * (len - 4 * u), alpha = Math.sin(f * Math.PI);
+      ctx.strokeStyle = `rgba(255,225,120,${0.9 * alpha})`; ctx.lineWidth = 0.6 * u;
+      ctx.beginPath(); ctx.moveTo(x - 1.4 * u, -1.1 * u); ctx.lineTo(x, 0); ctx.lineTo(x - 1.4 * u, 1.1 * u); ctx.stroke();
+    }
+    // bright arrowhead
+    const pulse = 0.85 + 0.15 * Math.sin(t * 6);
+    const g = ctx.createLinearGradient(len - 3 * u, 0, len + u, 0); g.addColorStop(0, '#f5c542'); g.addColorStop(1, '#fff6cf');
+    ctx.fillStyle = g; ctx.shadowColor = 'rgba(245,197,66,.9)'; ctx.shadowBlur = 8 * pulse;
+    ctx.beginPath(); ctx.moveTo(len + 1.6 * u, 0); ctx.lineTo(len - 2.2 * u, -2 * u * pulse); ctx.lineTo(len - 0.6 * u, 0); ctx.lineTo(len - 2.2 * u, 2 * u * pulse); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   function drawCharge(match) {

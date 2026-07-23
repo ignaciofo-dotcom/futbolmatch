@@ -202,6 +202,7 @@ window.Sim = (function () {
     p.vx += ax * k; p.vy += ay * k;
     p.x = clamp(p.x + p.vx * dt, 0.5, F.length - 0.5);
     p.y = clamp(p.y + p.vy * dt, 0.5, F.width - 0.5);
+    p.animPhase = (p.animPhase || 0) + Math.hypot(p.vx, p.vy) * dt * 0.35; // run-cycle for the leg/arm animation
   }
 
   // ---------------- possession & actions ----------------

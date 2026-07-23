@@ -60,6 +60,10 @@ Renderer is now **top-down horizontal**: x→screen-horizontal, y→screen-verti
 ---
 
 ## History (done)
+- **Match polish**: players are now little animated footballers (shirt body, head+hair, swinging
+  legs/arms via `p.animPhase`), bigger; the kickoff aim arrow is a glowing gold chevron arrow
+  (`render.drawAim`); the touch D-pad buttons sit closer together; auto-switch-to-receiver on a pass
+  confirmed working (`sim.doPass` → `switchControl`).
 - **Match redesign (all 13 backlog items above)**: top-down horizontal pitch, 4-a-side with bigger
   players, own-half kickoff with an aim-and-kick arrow, working goalkeeper saves + GK control,
   N/E/W/S touch D-pad, new ability set (Super Tiro 🔥 / Rabona 🌀 / Bicicleta 🚲) shown as bare
