@@ -51,6 +51,7 @@ window.I18N_DATA = {
   'hud.pass': { es: 'Pase', en: 'Pass' },
   'hud.shoot': { es: 'Disparo', en: 'Shoot' },
   'hud.tackle': { es: 'Entrada', en: 'Tackle' },
+  'hud.steal': { es: 'Quitarla', en: 'Steal' },
   'hud.sprint': { es: 'Sprint', en: 'Sprint' },
   'hud.pause': { es: 'Pausa', en: 'Pause' },
   'hud.pressure': { es: 'Presión', en: 'Pressure' },

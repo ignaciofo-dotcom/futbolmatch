@@ -4,12 +4,13 @@ window.MatchEngine = (function () {
   const CFG = window.CONFIG;
   const F = CFG.field;
 
-  // Formation for a team attacking +x (own goal at x=0). 4-a-side 1-1-1-1, all on own half.
+  // Formation for a team attacking +x (own goal at x=0). 5-a-side 1-1-2-1, all on own half.
   const FORMATION = [
     { role: 'GK',  pos: 'GOALKEEPER', x: 6,  y: 34 },
     { role: 'DEF', pos: 'DEFENDER',   x: 24, y: 34 },
-    { role: 'MID', pos: 'MIDFIELDER', x: 40, y: 24 },
-    { role: 'FWD', pos: 'FORWARD',    x: 46, y: 44 },
+    { role: 'MID', pos: 'MIDFIELDER', x: 40, y: 20 },
+    { role: 'MID', pos: 'MIDFIELDER', x: 40, y: 48 },
+    { role: 'FWD', pos: 'FORWARD',    x: 48, y: 34 },
   ];
 
   function mirrorX(x) { return F.length - x; }
@@ -39,7 +40,7 @@ window.MatchEngine = (function () {
       if (isUserSlot) userAssigned = true;
       const homeX = attackDir > 0 ? slot.x : mirrorX(slot.x);
       const homeY = slot.y;
-      const baseNumbers = [1, 4, 8, 9];
+      const baseNumbers = [1, 4, 6, 8, 9];
       let number = isUserSlot ? profile.shirtNumber : baseNumbers[i];
       if (!isUserSlot && number === profile.shirtNumber && side === 'home') number = baseNumbers[i] + 10;
       players.push(buildPlayer({

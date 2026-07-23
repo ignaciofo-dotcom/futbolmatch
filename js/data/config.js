@@ -23,7 +23,7 @@ window.CONFIG = {
     halfTimeLength: 8,        // seconds, skippable
     introLength: 2.5,
     goalCelebration: 2.2,
-    playersPerSide: 4,        // 1 GK + 3 outfield (arcade 4-a-side)
+    playersPerSide: 5,        // 1 GK + 4 outfield (arcade 5-a-side)
   },
 
   // User-selectable difficulty (scales opponent skill + hidden assistance).

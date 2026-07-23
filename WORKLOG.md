@@ -60,6 +60,12 @@ Renderer is now **top-down horizontal**: x→screen-horizontal, y→screen-verti
 ---
 
 ## History (done)
+- **5-a-side + possession-aware action button**: back to 5 players per side (formation 1-1-2-1:
+  GK, DEF, 2×MID, FWD in `engine.FORMATION`, numbers `[1,4,6,8,9]`, `config.playersPerSide: 5`).
+  The action-2 control is now labelled by possession: **"Disparo"** while you hold the ball,
+  **"Quitarla"** when you don't (new `hud.steal` i18n key). Applies to both the touch East button
+  (relabelled each frame in `screens.updateHUD`) and the keyboard HUD legend. The underlying action
+  was already possession-sensitive (charge-shot with the ball, tackle without it) — this is the label.
 - **Universal "control the ball holder" rule**: `sim.step` ends with a single rule — if a **home**
   player owns the ball and isn't the current `userPlayer`, `switchControl` to them. This means you
   always control whichever of your players holds the ball, no matter how they got it (kickoff, pass,

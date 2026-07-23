@@ -384,8 +384,11 @@ window.UI = (function () {
     $('hud-legend').innerHTML = hasBall
       ? `<span><b>${K.a1}</b> ${t('hud.pass')}</span><span><b>${K.a2}</b> ${t('hud.shoot')}</span>
          <span><b>${K.ab}</b> ${t('hud.ability')}</span><span><b>⇧</b> ${t('hud.sprint')}</span>`
-      : `<span><b>${K.a2}</b> ${t('hud.tackle')}</span><span><b>⎵</b> ${t('hud.switch')}</span>
+      : `<span><b>${K.a2}</b> ${t('hud.steal')}</span><span><b>⎵</b> ${t('hud.switch')}</span>
          <span><b>${K.ab}</b> ${t('hud.ability')}</span><span><b>P</b> ${t('hud.pause')}</span>`;
+    // touch East button (action2): "Disparo" while you hold the ball, "Quitarla" when you don't
+    const eBtn = document.querySelector('.tc-btn.e');
+    if (eBtn) eBtn.textContent = hasBall ? t('hud.shoot') : t('hud.steal');
     // banner / toast
     const banner = $('hud-banner'), toast = $('hud-toast');
     if (match.banner) { banner.textContent = t(match.banner); banner.classList.remove('hidden'); } else banner.classList.add('hidden');
