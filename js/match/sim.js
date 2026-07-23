@@ -125,6 +125,8 @@ window.Sim = (function () {
     ball.lastTouch = k; ball.lastPasser = k; ball.kickerCd = CFG.player.kickCooldown; k.kickCd = CFG.player.kickCooldown;
     window.Audio2.play(type === 'shot' ? 'shot' : 'pass');
     match.kickoffKicker = null;
+    // the kickoff is a pass too: take control of whichever teammate receives it
+    if (match.kickingSide === 'home') { match.passSwitchActive = true; match.passSwitchT = 4; }
     window.MatchEngine.showBanner(match, 'msg.kickoff', 0.9);
     window.MatchEngine.setPhase(match, 'PLAY');
   }
