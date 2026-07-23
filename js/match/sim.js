@@ -23,6 +23,7 @@ window.Sim = (function () {
 
   function step(match, dt) {
     match.ball.kickerCd = Math.max(0, match.ball.kickerCd - dt);
+    if (match.passSwitchT > 0) { match.passSwitchT -= dt; if (match.passSwitchT <= 0) match.passSwitchActive = false; }
     for (const p of match.players) { p.kickCd = Math.max(0, p.kickCd - dt); p.tackleCd = Math.max(0, p.tackleCd - dt); if (p.lungeT > 0) p.lungeT -= dt; if (p.diveT > 0) p.diveT -= dt; }
 
     // decide + move players
@@ -252,6 +253,8 @@ window.Sim = (function () {
     if (best) {
       const prevTeam = ball.lastTouch ? ball.lastTouch.team : null;
       ball.owner = best; best.kickCd = 0.05;
+      // after a user pass, take control of whoever actually receives the ball
+      if (match.passSwitchActive) { if (best.team === 'home') switchControl(match, best); match.passSwitchActive = false; }
       if (prevTeam && prevTeam !== best.team) {
         // recovery/interception
         if (best.isUser) window.Scoring.add(match, ball.z > 0.1 ? 'interception' : 'recovery');
@@ -267,7 +270,11 @@ window.Sim = (function () {
     if (!mate) return;
     const wasUser = p.isUser;
     passTo(match, p, mate);
-    if (wasUser) { window.Scoring.add(match, 'pass'); switchControl(match, mate); } // follow the pass
+    if (wasUser) {
+      window.Scoring.add(match, 'pass');
+      switchControl(match, mate);                 // follow the pass to the intended target...
+      match.passSwitchActive = true; match.passSwitchT = 3; // ...then re-attach to whoever actually receives it
+    }
   }
 
   function passTo(match, p, mate) {
