@@ -29,6 +29,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Stamp asset version (cache-busting)
+        # Replace the ?v=DEV placeholder on every css/js URL with a unique value per deploy,
+        # so browsers (incl. iOS Safari / home-screen apps) always fetch the newest files.
+        run: |
+          V="${GITHUB_SHA::8}-${GITHUB_RUN_NUMBER}"
+          sed -i "s/?v=DEV/?v=${V}/g" index.html
+          echo "Stamped assets with ?v=${V}"
+          grep -o 'main.js?v=[^"]*' index.html || true
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
