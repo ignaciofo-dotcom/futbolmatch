@@ -266,15 +266,27 @@ window.Sim = (function () {
   }
 
   function doPass(match, p) {
-    const mate = bestPassTarget(match, p);
+    // The user passes to the teammate they are FACING (directional pass), not an auto-picked one.
+    const mate = userPassTarget(match, p);
     if (!mate) return;
-    const wasUser = p.isUser;
     passTo(match, p, mate);
-    if (wasUser) {
-      window.Scoring.add(match, 'pass');
-      switchControl(match, mate);                 // follow the pass to the intended target...
-      match.passSwitchActive = true; match.passSwitchT = 3; // ...then re-attach to whoever actually receives it
+    window.Scoring.add(match, 'pass');
+    switchControl(match, mate);                    // follow the pass to the aimed teammate...
+    match.passSwitchActive = true; match.passSwitchT = 3; // ...and re-attach to whoever actually receives it
+  }
+
+  // Pick the teammate most in line with the passer's facing (so "turn toward #8, pass" reaches #8).
+  function userPassTarget(match, p) {
+    const mates = teammates(match, p).filter(m => m !== p && !m.isGK);
+    if (!mates.length) return null;
+    let best = null, bs = -Infinity;
+    for (const m of mates) {
+      const ang = Math.atan2(m.y - p.y, m.x - p.x);
+      const align = Math.cos(ang - p.facing);      // 1 = directly ahead, -1 = behind
+      const score = align * 3 - dist(p, m) * 0.03; // strongly prefer the faced mate, mild closeness
+      if (score > bs) { bs = score; best = m; }
     }
+    return best;
   }
 
   function passTo(match, p, mate) {
