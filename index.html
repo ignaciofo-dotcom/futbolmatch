@@ -115,8 +115,17 @@
   <div class="overlay hidden" id="overlay-hydration">
     <div class="panel">
       <h3 data-i18n="hydration_break">PAUSA DE HIDRATACIÓN</h3>
-      <div class="count" id="hydration-count">01:00</div>
-      <div class="adbox" id="ad-slot"><span data-i18n="ads.placeholder">ESPACIO PARA PUBLICIDAD</span><br><span class="tip" id="hydration-tip"></span></div>
+      <div class="count" id="hydration-count">00:10</div>
+      <div class="upg" id="hydration-upg">
+        <div class="upg-title" data-i18n="upg.title">MEJORA TU EQUIPO</div>
+        <div class="upg-points"><span data-i18n="upg.points">Puntos</span>: <b id="upg-points">0</b></div>
+        <div class="upg-row">
+          <div class="ov-btn upg-btn" data-upg="speed"><span data-i18n="upg.speed">+ Velocidad</span> <small class="upg-cost"></small></div>
+          <div class="ov-btn upg-btn" data-upg="defense"><span data-i18n="upg.defense">+ Defensa</span> <small class="upg-cost"></small></div>
+          <div class="ov-btn upg-btn" data-upg="power"><span data-i18n="upg.power">+ Potencia</span> <small class="upg-cost"></small></div>
+        </div>
+      </div>
+      <div class="adbox" id="ad-slot"><span data-i18n="ads.placeholder">ESPACIO PARA PUBLICIDAD</span> <span class="tip" id="hydration-tip"></span></div>
       <div class="hint" data-i18n="hydration.resume">El partido se reanuda automáticamente</div>
     </div>
   </div>

@@ -4,13 +4,13 @@ window.Input = (function () {
   const profiles = {
     ARROWS: {
       up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'],
-      action1: ['KeyZ'], action2: ['KeyX'], loft: ['KeyC'], switchPlayer: ['Space'], sprint: ['ShiftLeft', 'ShiftRight'],
+      action1: ['KeyZ'], action2: ['KeyX'], ability: ['KeyC'], switchPlayer: ['Space'], sprint: ['ShiftLeft', 'ShiftRight'],
       slots: ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'],
       pause: ['KeyP', 'Escape'], confirm: ['Enter'], back: ['Escape'], quit: ['KeyQ'],
     },
     WASD: {
       up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'],
-      action1: ['KeyJ'], action2: ['KeyK'], loft: ['KeyL'], switchPlayer: ['Space'], sprint: ['ShiftLeft', 'ShiftRight'],
+      action1: ['KeyJ'], action2: ['KeyK'], ability: ['KeyL'], switchPlayer: ['Space'], sprint: ['ShiftLeft', 'ShiftRight'],
       slots: ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'],
       pause: ['KeyP', 'Escape'], confirm: ['Enter'], back: ['Escape'], quit: ['KeyQ'],
     },
@@ -87,12 +87,12 @@ window.Input = (function () {
 
   function moveVector() {
     if (touchMove) return { x: touchMove.x, y: touchMove.y };  // on-screen joystick
-    // Field coords: up (into screen) = +x toward opponent goal; right = +y.
+    // Top-down field: +x is screen-right (toward the right goal), +y is screen-down.
     let x = 0, y = 0;
-    if (isDown('up')) x += 1;
-    if (isDown('down')) x -= 1;
-    if (isDown('right')) y += 1;
-    if (isDown('left')) y -= 1;
+    if (isDown('right')) x += 1;
+    if (isDown('left')) x -= 1;
+    if (isDown('down')) y += 1;
+    if (isDown('up')) y -= 1;
     const len = Math.hypot(x, y);
     if (len > 0) { x /= len; y /= len; }
     return { x, y };

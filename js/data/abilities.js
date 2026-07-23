@@ -1,30 +1,21 @@
-/* Ability definitions. positionSpawnWeights: 0 = never, higher = more common (single source of truth). */
+/* Ability definitions. positionSpawnWeights: 0 = never, higher = more common (single source of truth).
+   All three are one-shot special shots executed with the Ability button (South / 'C'). */
 window.ABILITIES = {
-  ABILITY_SPEED: {
-    id: 'ABILITY_SPEED', icon: '⚡', color: '#38bdf8', category: 'MOBILITY',
-    activationType: 'TIMED', durationSeconds: 5, maximumStack: 1,
-    positionSpawnWeights: { GOALKEEPER: 10, DEFENDER: 10, MIDFIELDER: 10, FORWARD: 10 },
+  ABILITY_SUPER_SHOT: {
+    id: 'ABILITY_SUPER_SHOT', icon: '🔥', color: '#f97316', category: 'OFFENSIVE',
+    activationType: 'INSTANT_SHOT', maximumStack: 1,
+    positionSpawnWeights: { GOALKEEPER: 2, DEFENDER: 8, MIDFIELDER: 10, FORWARD: 12 },
   },
-  ABILITY_DRIBBLE: {
-    id: 'ABILITY_DRIBBLE', icon: '👟', color: '#34d399', category: 'OFFENSIVE',
-    activationType: 'TIMED', durationSeconds: 5, maximumStack: 1,
-    positionSpawnWeights: { GOALKEEPER: 3, DEFENDER: 10, MIDFIELDER: 10, FORWARD: 10 },
-  },
-  ABILITY_TACKLE: {
-    id: 'ABILITY_TACKLE', icon: '🛡️', color: '#f59e0b', category: 'DEFENSIVE',
-    activationType: 'TIMED', durationSeconds: 5, maximumStack: 1,
-    positionSpawnWeights: { GOALKEEPER: 3, DEFENDER: 10, MIDFIELDER: 10, FORWARD: 3 },
-  },
-  ABILITY_SUPER_SAVE: {
-    id: 'ABILITY_SUPER_SAVE', icon: '🧤', color: '#a855f7', category: 'GOALKEEPING',
-    activationType: 'TIMED', durationSeconds: 5, maximumStack: 1,
-    positionSpawnWeights: { GOALKEEPER: 12, DEFENDER: 0, MIDFIELDER: 0, FORWARD: 0 },
+  ABILITY_RABONA: {
+    id: 'ABILITY_RABONA', icon: '🌀', color: '#22d3ee', category: 'OFFENSIVE',
+    activationType: 'INSTANT_SHOT', maximumStack: 1,
+    positionSpawnWeights: { GOALKEEPER: 2, DEFENDER: 8, MIDFIELDER: 12, FORWARD: 10 },
   },
   ABILITY_BICYCLE_KICK: {
-    id: 'ABILITY_BICYCLE_KICK', icon: '🔴', color: '#ef4444', category: 'OFFENSIVE',
-    activationType: 'CONDITIONAL_SINGLE_USE', durationSeconds: 0, maximumStack: 1,
-    positionSpawnWeights: { GOALKEEPER: 0, DEFENDER: 2, MIDFIELDER: 5, FORWARD: 6 },
+    id: 'ABILITY_BICYCLE_KICK', icon: '🚲', color: '#ef4444', category: 'OFFENSIVE',
+    activationType: 'CONDITIONAL_SINGLE_USE', maximumStack: 1,
+    positionSpawnWeights: { GOALKEEPER: 0, DEFENDER: 4, MIDFIELDER: 9, FORWARD: 11 },
   },
 };
 
-window.ABILITY_ORDER = ['ABILITY_SPEED', 'ABILITY_DRIBBLE', 'ABILITY_TACKLE', 'ABILITY_SUPER_SAVE', 'ABILITY_BICYCLE_KICK'];
+window.ABILITY_ORDER = ['ABILITY_SUPER_SHOT', 'ABILITY_RABONA', 'ABILITY_BICYCLE_KICK'];

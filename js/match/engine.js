@@ -4,13 +4,12 @@ window.MatchEngine = (function () {
   const CFG = window.CONFIG;
   const F = CFG.field;
 
-  // Formation for a team attacking +x (own goal at x=0). 5-a-side 1-2-1.
+  // Formation for a team attacking +x (own goal at x=0). 4-a-side 1-1-1-1, all on own half.
   const FORMATION = [
-    { role: 'GK',  pos: 'GOALKEEPER', x: 5,  y: 34 },
+    { role: 'GK',  pos: 'GOALKEEPER', x: 6,  y: 34 },
     { role: 'DEF', pos: 'DEFENDER',   x: 24, y: 34 },
-    { role: 'MID', pos: 'MIDFIELDER', x: 46, y: 21 },
-    { role: 'MID', pos: 'MIDFIELDER', x: 46, y: 47 },
-    { role: 'FWD', pos: 'FORWARD',    x: 72, y: 34 },
+    { role: 'MID', pos: 'MIDFIELDER', x: 40, y: 24 },
+    { role: 'FWD', pos: 'FORWARD',    x: 46, y: 44 },
   ];
 
   function mirrorX(x) { return F.length - x; }
@@ -40,7 +39,7 @@ window.MatchEngine = (function () {
       if (isUserSlot) userAssigned = true;
       const homeX = attackDir > 0 ? slot.x : mirrorX(slot.x);
       const homeY = slot.y;
-      const baseNumbers = [1, 4, 6, 8, 9];
+      const baseNumbers = [1, 4, 8, 9];
       let number = isUserSlot ? profile.shirtNumber : baseNumbers[i];
       if (!isUserSlot && number === profile.shirtNumber && side === 'home') number = baseNumbers[i] + 10;
       players.push(buildPlayer({
@@ -55,68 +54,74 @@ window.MatchEngine = (function () {
         appearance: isUserSlot ? profile.appearance : { skin: i % 4, hair: i % 4 },
       }));
     });
-    // If user's chosen position wasn't in formation (shouldn't happen), assign forward.
-    if (side === 'home' && !userAssigned) { players[4].isUser = true; players[4].number = profile.shirtNumber; players[4].attrs = profile.attributes; }
+    // If user's chosen position wasn't in formation (shouldn't happen), assign the last slot.
+    if (side === 'home' && !userAssigned) { const p = players[players.length - 1]; p.isUser = true; p.number = profile.shirtNumber; p.attrs = profile.attributes; }
     return players;
   }
 
   function create(profile, opponentTeamId, difficulty, roundNumber) {
     const homeTeam = window.getTeam(profile.teamId);
     const awayTeam = window.getTeam(opponentTeamId);
-    const awaySkill = Math.max(0.55, Math.min(0.95, 0.62 + (difficulty - 1) * 0.5));
-    const homeAISkill = 0.82;
+    const diff = CFG.difficulties[profile.difficulty] || CFG.difficulties.NORMAL;
+    const awaySkill = Math.max(0.5, Math.min(0.97, diff.oppSkill * (0.92 + (difficulty - 1) * 0.4)));
+    const homeAISkill = 0.8;
 
     const homePlayers = buildTeam('home', homeTeam, +1, profile.position, profile, homeAISkill);
     const awayPlayers = buildTeam('away', awayTeam, -1, 'FORWARD',
-      // synthetic profile for away controlled slot (still AI)
       { attributes: window.Save.defaultAttrs('FORWARD'), shirtNumber: 9, position: 'FORWARD', appearance: {} },
       awaySkill);
     awayPlayers.forEach(p => p.isUser = false);
 
     const players = homePlayers.concat(awayPlayers);
     const userPlayer = homePlayers.find(p => p.isUser);
+    const minutes = Math.max(CFG.match.minMinutes, Math.min(CFG.match.maxMinutes, profile.matchMinutes || CFG.match.defaultMinutes));
 
     const match = {
-      difficulty, roundNumber,
+      difficulty, roundNumber, assist: diff.assist, minutes, halfSeconds: minutes * 60 / 2,
       home: { side: 'home', teamRef: homeTeam, score: 0, isUser: true, attackDir: +1 },
       away: { side: 'away', teamRef: awayTeam, score: 0, isUser: false, attackDir: -1 },
-      players, homePlayers, awayPlayers, userPlayer,
-      ball: { x: F.length / 2, y: F.width / 2, z: 0, vx: 0, vy: 0, vz: 0, owner: null, lastTouch: null, kickerCd: 0 },
+      players, homePlayers, awayPlayers, userPlayer, ownPlayer: userPlayer,
+      ball: { x: F.length / 2, y: F.width / 2, z: 0, vx: 0, vy: 0, vz: 0, owner: null, lastTouch: null, kickerCd: 0, curve: 0, fire: 0 },
       phase: 'INTRO', half: 1, halfClock: 0,
       hydrationTriggered: { 1: false, 2: false },
       stateTimer: CFG.match.introLength,
       playing: false,
-      circles: [], inventory: [], activeEffects: {},
-      pendingSingleUse: null, // e.g. 'ABILITY_SUPER_SHOT' style: next shot boosted
+      circles: [], inventory: [], activeEffects: {}, selectedAbility: 0,
       stats: { goals: 0, assists: 0, saves: 0, recoveries: 0, shotsOnTarget: 0, passesCompleted: 0, tackles: 0, performance: 0 },
-      lastGoalTeam: null,
-      finished: false, result: null,
+      spent: 0, // performance points spent on in-break upgrades
+      lastGoalTeam: null, finished: false, result: null,
       toast: null, toastT: 0, banner: null, bannerT: 0,
       shotCharge: 0, chargingShot: false,
-      testShort: profile.testShortMatch,
+      kickoffKicker: null, kickoffAim: 0,
     };
     resetKickoff(match, 'home'); // home kicks off first
     window.Bus.emit('matchCreated', match);
     return match;
   }
 
-  function halfLength(match) { return match.testShort ? 30 : CFG.match.halfLength; }
-  function hydrationAt(match) { return match.testShort ? 15 : CFG.match.hydrationAt; }
+  function halfLength(match) { return match.halfSeconds; }
+  function hydrationAt(match) { return match.halfSeconds / 2; }
 
+  // Place both teams on their own halves, put the ball at centre, and hand the kickoff to a kicker.
   function resetKickoff(match, kickingSide) {
-    // place all players at formation home spots; ball centre; give kickoff to kickingSide forward
     match.players.forEach(p => {
-      p.x = p.homeX; p.y = p.homeY; p.vx = p.vy = 0;
-      p.diveT = 0; p.lungeT = 0;
+      let hx = p.homeX;
+      if (p.attackDir > 0) hx = Math.min(hx, F.length / 2 - 2); else hx = Math.max(hx, F.length / 2 + 2);
+      p.x = hx; p.y = p.homeY; p.vx = p.vy = 0; p.diveT = 0; p.lungeT = 0; p.isUser = false;
     });
-    match.ball.x = F.length / 2; match.ball.y = F.width / 2; match.ball.z = 0;
-    match.ball.vx = match.ball.vy = match.ball.vz = 0; match.ball.owner = null;
-    match.ball.lastTouch = null; match.ball.kickerCd = 0;
-    // nudge the kicking side's midfielder toward the ball
-    const team = kickingSide === 'home' ? match.homePlayers : match.awayPlayers;
-    const mid = team.find(p => p.role === 'MID');
-    if (mid) { mid.x = F.length / 2 - team[0].attackDir * 1.5; mid.y = F.width / 2; }
-    match.kickingSide = kickingSide;
+    const ball = match.ball;
+    ball.x = F.length / 2; ball.y = F.width / 2; ball.z = 0; ball.vx = ball.vy = ball.vz = 0;
+    ball.owner = null; ball.lastTouch = null; ball.lastPasser = null; ball.kickerCd = 0; ball.curve = 0; ball.fire = 0;
+    // control returns to the user's own player each kickoff
+    match.userPlayer = match.ownPlayer; match.ownPlayer.isUser = true;
+
+    let kicker;
+    if (kickingSide === 'home') kicker = match.ownPlayer;                       // the user takes their kickoff
+    else { const out = match.awayPlayers.filter(p => !p.isGK); kicker = out.reduce((a, b) => Math.abs(b.x - F.length / 2) < Math.abs(a.x - F.length / 2) ? b : a); }
+    const dir = kicker.attackDir;
+    kicker.x = F.length / 2 - dir * 1.6; kicker.y = F.width / 2;
+    ball.owner = kicker; ball.x = kicker.x + dir * 1.0; ball.y = kicker.y;
+    match.kickoffKicker = kicker; match.kickoffAim = dir > 0 ? 0 : Math.PI; match.kickingSide = kickingSide;
   }
 
   function setPhase(match, phase, timer) {
@@ -137,7 +142,11 @@ window.MatchEngine = (function () {
     switch (match.phase) {
       case 'INTRO':
         match.stateTimer -= dt;
-        if (match.stateTimer <= 0) { showBanner(match, 'msg.kickoff', 1.2); setPhase(match, 'PLAY'); window.Audio2.play('whistle'); }
+        if (match.stateTimer <= 0) { window.Audio2.play('whistle'); setPhase(match, 'KICKOFF', 1.0); }
+        break;
+
+      case 'KICKOFF':
+        window.Sim.stepKickoff(match, dt);
         break;
 
       case 'PLAY': {
@@ -175,8 +184,8 @@ window.MatchEngine = (function () {
         match.stateTimer -= dt;
         window.Sim.stepBallOnly(match, dt); // let celebration animation breathe
         if (match.stateTimer <= 0) {
-          resetKickoff(match, match.lastGoalTeam === 'home' ? 'away' : 'home');
-          setPhase(match, 'PLAY');
+          resetKickoff(match, match.lastGoalTeam === 'home' ? 'away' : 'home'); // conceding team kicks off
+          setPhase(match, 'KICKOFF', 1.0);
         }
         break;
 
@@ -195,7 +204,7 @@ window.MatchEngine = (function () {
 
   function startHydration(match) {
     window.Audio2.play('whistle');
-    setPhase(match, 'HYDRATION', match.testShort ? 4 : CFG.match.hydrationLength);
+    setPhase(match, 'HYDRATION', CFG.match.hydrationLength);
     window.Bus.emit('hydrationStart', match);
   }
 
@@ -216,10 +225,9 @@ window.MatchEngine = (function () {
 
   function startSecondHalf(match) {
     match.half = 2; match.halfClock = 0;
-    // clear ability circles/effects carry — inventory persists across halves
-    resetKickoff(match, 'away');
+    resetKickoff(match, 'away'); // away kicks off the second half
     window.Bus.emit('halftimeEnd', match);
-    setPhase(match, 'PLAY');
+    setPhase(match, 'KICKOFF', 1.0);
     window.Audio2.play('whistle');
   }
 

@@ -15,15 +15,22 @@ window.CONFIG = {
     centreCircle: 9.15,
   },
 
-  // Match timing (seconds of PLAYABLE time). Shortenable for testing.
+  // Match timing. Total playable minutes is a user input (1–10); halves/breaks derive from it.
   match: {
-    halfLength: 300,          // 5:00 playable per half
-    hydrationAt: 150,         // trigger break at 2:30 of each half
-    hydrationLength: 60,      // 1:00 real time
-    halfTimeLength: 15,       // seconds, skippable
+    defaultMinutes: 6,        // default total playable minutes (user can pick 1–10)
+    minMinutes: 1, maxMinutes: 10,
+    hydrationLength: 10,      // 10 s real time (was 60)
+    halfTimeLength: 8,        // seconds, skippable
     introLength: 2.5,
-    goalCelebration: 2.5,
-    playersPerSide: 5,        // 1 GK + 4 outfield (arcade 5-a-side)
+    goalCelebration: 2.2,
+    playersPerSide: 4,        // 1 GK + 3 outfield (arcade 4-a-side)
+  },
+
+  // User-selectable difficulty (scales opponent skill + hidden assistance).
+  difficulties: {
+    EASY:   { oppSkill: 0.60, assist: 0.30 },
+    NORMAL: { oppSkill: 0.75, assist: 0.10 },
+    HARD:   { oppSkill: 0.92, assist: 0.0  },
   },
 
   // Player physics (metres/second etc.)
@@ -54,7 +61,7 @@ window.CONFIG = {
   },
 
   ability: {
-    maxInventory: 5,
+    maxInventory: 3,
     maxActiveCircles: 3,
     initialSpawnDelay: 6,     // shorter than design (20s) so MVP matches surface abilities quickly
     respawnMin: 8,

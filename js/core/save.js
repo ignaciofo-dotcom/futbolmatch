@@ -18,7 +18,8 @@ window.Save = (function () {
       language: window.I18N.lang,
       controlProfile: 'ARROWS',
       sound: true,
-      testShortMatch: false,
+      difficulty: 'NORMAL',
+      matchMinutes: window.CONFIG.match.defaultMinutes,
       displayName: opts.displayName,
       teamId: opts.teamId,
       position: opts.position,
@@ -48,8 +49,9 @@ window.Save = (function () {
   }
 
   function migrate(data) {
-    // Hook for future save-version migrations.
     if (data.saveVersion == null) data.saveVersion = 1;
+    if (data.difficulty == null) data.difficulty = 'NORMAL';
+    if (data.matchMinutes == null) data.matchMinutes = window.CONFIG.match.defaultMinutes;
     return data;
   }
 

@@ -232,16 +232,18 @@ window.UI = (function () {
   };
 
   // ============ SETTINGS ============
+  const DIFFS = ['EASY', 'NORMAL', 'HARD'];
   controllers.settings = {
     idx: 0,
-    enter() { this.idx = 0; this.fields = ['language', 'controls', 'sound', 'matchLength', 'reset']; },
+    enter() { this.idx = 0; this.fields = ['language', 'controls', 'sound', 'difficulty', 'matchLength', 'reset']; },
     render() {
       const p = window.Game.profile, box = $('settings-form'); box.innerHTML = '';
       const lang = window.I18N.lang === 'en' ? 'English' : 'Español';
       const ctrl = (p ? p.controlProfile : 'ARROWS') === 'WASD' ? 'WASD + J/K' : 'Flechas + Z/X';
       const sound = (p ? p.sound : true) ? t('settings.on') : t('settings.off');
-      const ml = (p && p.testShortMatch) ? '30 s' : '5:00';
-      const rows = [['settings.language', lang], ['settings.controls', ctrl], ['settings.sound', sound], ['settings.matchLength', ml]];
+      const diff = t('diff.' + (p ? p.difficulty : 'NORMAL'));
+      const ml = (p ? p.matchMinutes : window.CONFIG.match.defaultMinutes) + ' min';
+      const rows = [['settings.language', lang], ['settings.controls', ctrl], ['settings.sound', sound], ['settings.difficulty', diff], ['settings.matchLength', ml]];
       rows.forEach(([label, val], i) => {
         const f = document.createElement('div'); f.className = 'field' + (i === this.idx ? ' sel' : '');
         f.innerHTML = `<label>${t(label)}</label><span class="arr">◀</span><span class="val">${val}</span><span class="arr">▶</span>`;
@@ -251,21 +253,23 @@ window.UI = (function () {
         arrs[1].onclick = (e) => { e.stopPropagation(); this.idx = i; this.nav('right'); };
         box.appendChild(f);
       });
-      const r = document.createElement('div'); r.className = 'field action' + (this.idx === 4 ? ' sel' : ''); r.textContent = t('settings.reset');
-      r.onclick = () => { this.idx = 4; this.nav('confirm'); };
+      const ri = this.fields.length - 1;
+      const r = document.createElement('div'); r.className = 'field action' + (this.idx === ri ? ' sel' : ''); r.textContent = t('settings.reset');
+      r.onclick = () => { this.idx = ri; this.nav('confirm'); };
       box.appendChild(r);
     },
     nav(a) {
-      const p = window.Game.profile;
-      if (a === 'up') { this.idx = (this.idx + 4) % 5; window.Audio2.play('select'); this.render(); return; }
-      if (a === 'down') { this.idx = (this.idx + 1) % 5; window.Audio2.play('select'); this.render(); return; }
+      const p = window.Game.profile, n = this.fields.length;
+      if (a === 'up') { this.idx = (this.idx + n - 1) % n; window.Audio2.play('select'); this.render(); return; }
+      if (a === 'down') { this.idx = (this.idx + 1) % n; window.Audio2.play('select'); this.render(); return; }
       const dir = a === 'left' ? -1 : a === 'right' ? 1 : 0;
       const key = this.fields[this.idx];
       if (dir || (a === 'confirm' && key !== 'reset')) {
         if (key === 'language') { window.I18N.setLang(window.I18N.lang === 'es' ? 'en' : 'es'); if (p) p.language = window.I18N.lang; }
         else if (key === 'controls') { const np = (p ? p.controlProfile : 'ARROWS') === 'ARROWS' ? 'WASD' : 'ARROWS'; window.Input.setProfile(np); if (p) p.controlProfile = np; }
         else if (key === 'sound') { const v = p ? !p.sound : false; if (p) p.sound = v; window.Audio2.setEnabled(v); }
-        else if (key === 'matchLength') { if (p) p.testShortMatch = !p.testShortMatch; }
+        else if (key === 'difficulty') { if (p) { const i = (DIFFS.indexOf(p.difficulty) + (dir || 1) + DIFFS.length) % DIFFS.length; p.difficulty = DIFFS[i]; } }
+        else if (key === 'matchLength') { if (p) { const C = window.CONFIG.match; p.matchMinutes = Math.max(C.minMinutes, Math.min(C.maxMinutes, (p.matchMinutes || C.defaultMinutes) + (dir || 1))); } }
         if (p) window.Save.save(p);
         window.Audio2.play('select'); this.render(); window.I18N.refresh($('screen-settings')); return;
       }
@@ -360,27 +364,28 @@ window.UI = (function () {
     $('hud-half').textContent = halfLabel(match);
     $('hud-clock').textContent = fmtClock(match.halfClock);
 
-    // slots
+    // ability slots — highlight the selected one; tapping a slot uses it (data-vkey)
+    const N = window.CONFIG.ability.maxInventory;
     const slots = $('hud-slots');
-    if (slots.childElementCount !== 5) { slots.innerHTML = ''; for (let i = 0; i < 5; i++) { const d = document.createElement('div'); d.className = 'slot empty'; d.innerHTML = `<span class="ic"></span><span class="key">${i + 1}</span>`; slots.appendChild(d); } }
-    for (let i = 0; i < 5; i++) {
+    if (slots.childElementCount !== N) { slots.innerHTML = ''; for (let i = 0; i < N; i++) { const d = document.createElement('div'); d.className = 'slot empty'; d.dataset.vkey = 'slot' + (i + 1); d.innerHTML = `<span class="ic"></span><span class="key">${i + 1}</span>`; slots.appendChild(d); } }
+    for (let i = 0; i < N; i++) {
       const slot = slots.children[i], id = match.inventory[i];
       const def = id ? window.ABILITIES[id] : null;
-      slot.className = 'slot ' + (def ? 'full' : 'empty') + (def && match.activeEffects[id] ? ' active' : '');
+      slot.className = 'slot ' + (def ? 'full' : 'empty') + (def && i === match.selectedAbility ? ' sel' : '');
       slot.style.color = def ? def.color : '';
       slot.querySelector('.ic').textContent = def ? def.icon : '';
     }
     // stamina
     $('hud-stamina').style.width = Math.max(0, match.userPlayer.stamina) + '%';
-    // legend — keys shown for the current control profile, actions for the current situation
+    // legend — keys for the current control profile and situation
     const hasBall = match.ball.owner === match.userPlayer;
     const wasd = window.Input.getProfile() === 'WASD';
-    const K = wasd ? { a1: 'J', a2: 'K', loft: 'L' } : { a1: 'Z', a2: 'X', loft: 'C' };
+    const K = wasd ? { a1: 'J', a2: 'K', ab: 'L' } : { a1: 'Z', a2: 'X', ab: 'C' };
     $('hud-legend').innerHTML = hasBall
       ? `<span><b>${K.a1}</b> ${t('hud.pass')}</span><span><b>${K.a2}</b> ${t('hud.shoot')}</span>
-         <span><b>${K.loft}</b> ${t('hud.loft')}</span><span><b>⇧</b> ${t('hud.sprint')}</span>`
-      : `<span><b>${K.a2}</b> ${t('hud.tackle')}</span><span><b>Space</b> ${t('hud.switch')}</span>
-         <span><b>⇧</b> ${t('hud.sprint')}</span><span><b>P</b> ${t('hud.pause')}</span>`;
+         <span><b>${K.ab}</b> ${t('hud.ability')}</span><span><b>⇧</b> ${t('hud.sprint')}</span>`
+      : `<span><b>${K.a2}</b> ${t('hud.tackle')}</span><span><b>⎵</b> ${t('hud.switch')}</span>
+         <span><b>${K.ab}</b> ${t('hud.ability')}</span><span><b>P</b> ${t('hud.pause')}</span>`;
     // banner / toast
     const banner = $('hud-banner'), toast = $('hud-toast');
     if (match.banner) { banner.textContent = t(match.banner); banner.classList.remove('hidden'); } else banner.classList.add('hidden');
@@ -398,11 +403,32 @@ window.UI = (function () {
     toggle('overlay-pause', match.phase === 'PAUSED');
     toggle('overlay-penalties', match.phase === 'PENALTIES');
 
-    if (match.phase === 'HYDRATION') { $('hydration-count').textContent = fmtClock(Math.max(0, match.stateTimer)); $('hydration-tip').textContent = t(curTip); }
+    if (match.phase === 'HYDRATION') { $('hydration-count').textContent = fmtClock(Math.max(0, match.stateTimer)); $('hydration-tip').textContent = t(curTip); renderUpgrades(match); }
     if (match.phase === 'HALFTIME') { $('halftime-score').textContent = `${match.home.score} – ${match.away.score}`; $('halftime-count').textContent = fmtClock(Math.max(0, match.stateTimer)); }
     if (match.phase === 'PENALTIES') renderPenalties(match);
   }
   function pickTip() { curTip = tips[Math.floor(Math.random() * tips.length)]; }
+
+  // ---- hydration-break upgrades: spend accumulated score on team stats ----
+  const UPGRADE_COST = 150, UPGRADE_BOOST = 6;
+  function renderUpgrades(match) {
+    $('upg-points').textContent = match.stats.performance;
+    document.querySelectorAll('#hydration-upg .upg-cost').forEach(el => el.textContent = '(' + UPGRADE_COST + ')');
+    document.querySelectorAll('#hydration-upg .upg-btn').forEach(b => b.classList.toggle('disabled', match.stats.performance < UPGRADE_COST));
+  }
+  function buyUpgrade(match, type) {
+    if (!match || match.stats.performance < UPGRADE_COST) { window.Audio2.play('error'); return; }
+    match.stats.performance -= UPGRADE_COST; match.spent = (match.spent || 0) + UPGRADE_COST;
+    const cap = window.CONFIG.progression.attrMax;
+    const bump = (a, k) => { a[k] = Math.min(cap, (a[k] || 0) + UPGRADE_BOOST); };
+    match.homePlayers.forEach(p => {
+      if (type === 'speed') { bump(p.attrs, 'speed'); bump(p.attrs, 'acceleration'); }
+      else if (type === 'defense') { bump(p.attrs, 'tackling'); bump(p.attrs, 'positioning'); if (p.isGK) { bump(p.attrs, 'reflexes'); bump(p.attrs, 'goalkeeping'); } }
+      else if (type === 'power') { bump(p.attrs, 'shooting'); bump(p.attrs, 'strength'); }
+    });
+    window.Audio2.play('levelup');
+    renderUpgrades(match);
+  }
 
   function renderPenalties(match) {
     const P = match.penalties; if (!P) return;
@@ -427,7 +453,11 @@ window.UI = (function () {
     msg.textContent = P.result ? t('penalties.' + (P.result === 'goal' ? 'goal' : P.result === 'saved' ? 'saved' : 'miss')) : t(P.msg);
   }
 
-  function init() { /* nothing yet */ }
+  function init() {
+    document.querySelectorAll('#hydration-upg .upg-btn').forEach(b => {
+      b.onclick = () => buyUpgrade(window.Game.match, b.dataset.upg);
+    });
+  }
 
   return { init, show, input, updateHUD, updateOverlays, pickTip, controllers };
 })();

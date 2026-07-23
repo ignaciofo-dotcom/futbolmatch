@@ -65,7 +65,6 @@ window.Sim = (function () {
       if (window.Input.isDown('action2')) { match.chargingShot = true; match.shotCharge = Math.min(B.maxShotCharge, (match.shotCharge || 0) + dt); }
       else if (match.chargingShot) { match.chargingShot = false; doShot(match, p, match.shotCharge / B.maxShotCharge); match.shotCharge = 0; }
       if (window.Input.pressed('action1')) doPass(match, p);
-      if (window.Input.pressed('loft')) doLoft(match, p);
     } else {
       match.chargingShot = false; match.shotCharge = 0;
       if (window.Input.pressed('action2')) doTackle(match, p);
@@ -83,27 +82,50 @@ window.Sim = (function () {
     window.Bus.emit('switchPlayer', { match, to: target });
   }
 
-  // Take control of the outfield teammate nearest the ball; repeated presses cycle by proximity.
+  // Take control of the home player nearest the ball (INCLUDING the goalkeeper, so the user can
+  // grab the keeper when the opponent attacks); repeated presses cycle by proximity.
   function switchToBall(match) {
     const ball = match.ball;
-    const cands = match.homePlayers.filter(pl => !pl.isGK);
+    const cands = match.homePlayers.slice();
     if (!cands.length) return;
     cands.sort((a, b) => Math.hypot(a.x - ball.x, a.y - ball.y) - Math.hypot(b.x - ball.x, b.y - ball.y));
     const idx = cands.indexOf(match.userPlayer);
     switchControl(match, cands[(idx + 1) % cands.length]);
   }
 
-  // Lofted / chip kick: pops the ball into the air (mostly upward) so it can be met with a
-  // bicycle kick. The small forward speed makes it drop back down close to the kicker.
-  function doLoft(match, p) {
-    const ball = match.ball;
-    if (ball.owner !== p) return;
-    const dx = Math.cos(p.facing), dy = Math.sin(p.facing);
-    ball.owner = null; ball.kickerCd = CFG.player.kickCooldown; p.kickCd = CFG.player.kickCooldown;
-    ball.vx = dx * B.loftForward; ball.vy = dy * B.loftForward; ball.vz = B.loftRise;
-    ball.lastTouch = p; ball.lastPasser = null;
-    window.Audio2.play('pass');
-    window.Bus.emit('loft', { match, from: p });
+  // Kickoff: the kicker holds the ball at centre; the user aims with the stick and kicks with
+  // Pase (low) or Tiro (higher). The AI aims at a teammate. A mis-hit just puts the ball in play.
+  function stepKickoff(match, dt) {
+    const k = match.kickoffKicker, ball = match.ball;
+    if (!k) { window.MatchEngine.setPhase(match, 'PLAY'); return; }
+    ball.owner = k;
+    ball.x = clamp(k.x + Math.cos(match.kickoffAim) * 1.2, 1, F.length - 1);
+    ball.y = clamp(k.y + Math.sin(match.kickoffAim) * 1.2, 1, F.width - 1);
+    ball.z = 0; ball.vx = ball.vy = ball.vz = 0;
+    if (match.kickingSide === 'home') {
+      const mv = window.Input.moveVector();
+      if (mv.x || mv.y) match.kickoffAim = Math.atan2(mv.y, mv.x);
+      const p1 = window.Input.pressed('action1'), p2 = window.Input.pressed('action2');
+      if (p1 || p2) kickoffKick(match, p2 ? 'shot' : 'pass');
+    } else {
+      match.stateTimer -= dt;
+      if (match.stateTimer <= 0) {
+        const mates = teammates(match, k).filter(m => m !== k && !m.isGK);
+        const tgt = mates.length ? mates[Math.floor(Math.random() * mates.length)] : null;
+        if (tgt) match.kickoffAim = Math.atan2(tgt.y - k.y, tgt.x - k.x);
+        kickoffKick(match, 'pass');
+      }
+    }
+  }
+  function kickoffKick(match, type) {
+    const k = match.kickoffKicker, ball = match.ball, a = match.kickoffAim;
+    const spd = type === 'shot' ? B.shotSpeed * 0.85 : B.passSpeed;
+    ball.owner = null; ball.vx = Math.cos(a) * spd; ball.vy = Math.sin(a) * spd; ball.vz = type === 'shot' ? 3 : 0;
+    ball.lastTouch = k; ball.lastPasser = k; ball.kickerCd = CFG.player.kickCooldown; k.kickCd = CFG.player.kickCooldown;
+    window.Audio2.play(type === 'shot' ? 'shot' : 'pass');
+    match.kickoffKicker = null;
+    window.MatchEngine.showBanner(match, 'msg.kickoff', 0.9);
+    window.MatchEngine.setPhase(match, 'PLAY');
   }
 
   // ---------------- AI ----------------
@@ -193,6 +215,25 @@ window.Sim = (function () {
       ball.vx = o.vx; ball.vy = o.vy; ball.vz = 0;
       // shield / dribble reduce steal chance handled in tackle
       return;
+    }
+    // Goalkeepers actively stop shots that reach them (fixes the ball passing through the keeper).
+    for (const gk of [match.homePlayers.find(p => p.isGK), match.awayPlayers.find(p => p.isGK)]) {
+      if (!gk) continue;
+      if (ball.kickerCd > 0 && ball.lastTouch === gk) continue;
+      if (ball.z > 2.6) continue; // sailing over the keeper
+      const dgk = Math.hypot(gk.x - ball.x, gk.y - ball.y);
+      const towardGoal = gk.attackDir > 0 ? ball.vx < -0.5 : ball.vx > 0.5;
+      let reach = CFG.player.controlRadius + 1.5 + (gk.attrs.reflexes - 50) * 0.02;
+      if (window.MatchAbilities.effectActive(match, 'ABILITY_SUPER_SAVE') && gk.isUser) reach += 2.2;
+      if (dgk < reach && (towardGoal || Math.hypot(ball.vx, ball.vy) < 6)) {
+        ball.owner = gk; gk.diveT = 0.4; gk.diveDir = Math.sign(ball.y - gk.y) || 1;
+        ball.x = gk.x; ball.y = gk.y; ball.z = 0; ball.vx = ball.vy = ball.vz = 0;
+        ball.lastTouch = gk; ball.lastPasser = null;
+        window.Audio2.play('save');
+        if (gk.isUser && towardGoal) window.Scoring.add(match, 'save');
+        window.Bus.emit('save', { match, gk });
+        return;
+      }
     }
     if (ball.z > 0.6) return; // can't collect a high ball on the ground
     // free ground ball: nearest eligible player collects
@@ -340,6 +381,8 @@ window.Sim = (function () {
     // ground friction (less effect while airborne)
     const fr = Math.pow(B.friction, dt);
     ball.vx *= fr; ball.vy *= fr;
+    // lateral curve (rabona / bent shots)
+    if (ball.curve) { ball.vy += ball.curve * dt * 22; ball.curve *= Math.pow(0.4, dt); if (Math.abs(ball.curve) < 0.15) ball.curve = 0; }
 
     const nx = ball.x + ball.vx * dt;
     const ny = ball.y + ball.vy * dt;
@@ -407,5 +450,5 @@ window.Sim = (function () {
     ball.lastTouch = gk; ball.lastPasser = null; gk.kickCd = 0.3;
   }
 
-  return { step, stepBallOnly, inMouth, nearest, teammates, opponents, dist, GOAL_Y, GOAL_HALF };
+  return { step, stepBallOnly, stepKickoff, inMouth, nearest, teammates, opponents, dist, GOAL_Y, GOAL_HALF };
 })();

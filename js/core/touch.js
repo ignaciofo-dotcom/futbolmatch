@@ -17,12 +17,12 @@ window.TouchUI = (function () {
       <div id="tc-move"></div>
       <div id="tc-stick" class="hidden"><div id="tc-thumb"></div></div>
       <button class="tc-pause" data-vkey="pause" aria-label="pause">⏸</button>
-      <div id="tc-buttons">
-        <button class="tc-btn sprint" data-vkey="sprint" data-i18n="hud.sprint">Sprint</button>
-        <button class="tc-btn switch" data-vkey="switchPlayer" data-i18n="hud.switch">Cambiar</button>
-        <button class="tc-btn loft" data-vkey="loft" data-i18n="hud.loft">Globo</button>
-        <button class="tc-btn pass" data-vkey="action1" data-i18n="hud.pass">Pase</button>
-        <button class="tc-btn shoot" data-vkey="action2" data-i18n="hud.shoot">Disparo</button>
+      <button class="tc-switch2" data-vkey="switchPlayer" data-i18n="hud.switch">Cambiar</button>
+      <div id="tc-pad">
+        <button class="tc-btn n" data-vkey="sprint" data-i18n="hud.sprint">Sprint</button>
+        <button class="tc-btn w" data-vkey="action1" data-i18n="hud.pass">Pase</button>
+        <button class="tc-btn e" data-vkey="action2" data-i18n="hud.shoot">Tiro</button>
+        <button class="tc-btn s" data-vkey="ability" data-i18n="hud.ability">Habilidad</button>
       </div>`;
     document.getElementById('app').appendChild(wrap);
     moveZone = wrap.querySelector('#tc-move');
@@ -47,8 +47,8 @@ window.TouchUI = (function () {
       const dx = e.clientX - ox, dy = e.clientY - oy, d = Math.hypot(dx, dy) || 1;
       const mag = Math.min(1, d / STICK_R), nx = dx / d, ny = dy / d;
       thumb.style.transform = `translate(calc(-50% + ${nx * mag * STICK_R}px), calc(-50% + ${ny * mag * STICK_R}px))`;
-      // screen up (-y) -> field +x (toward opponent goal); screen right (+x) -> field +y
-      window.Input.setTouchMove(-ny * mag, nx * mag);
+      // top-down: screen right (+x) -> field +x; screen down (+y) -> field +y
+      window.Input.setTouchMove(nx * mag, ny * mag);
     });
     const end = (e) => { if (e.pointerId !== stickId) return; stickId = null; stick.classList.add('hidden'); window.Input.setTouchMove(0, 0); };
     moveZone.addEventListener('pointerup', end);
@@ -122,7 +122,7 @@ window.TouchUI = (function () {
       document.body.classList.toggle('in-match', s === 'MATCH');
       if (s !== 'MATCH') { setVisible(false); window.Input.clearVirtual(); }
     });
-    window.Bus.on('phaseChange', ({ phase }) => setVisible(phase === 'PLAY' || phase === 'INTRO' || phase === 'GOAL'));
+    window.Bus.on('phaseChange', ({ phase }) => setVisible(phase === 'PLAY' || phase === 'INTRO' || phase === 'GOAL' || phase === 'KICKOFF'));
     window.Bus.on('langChanged', () => { if (wrap && window.I18N) window.I18N.refresh(wrap); });
 
     // fullscreen toggle button + the in-match toggle inside the pause overlay
