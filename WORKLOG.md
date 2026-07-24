@@ -60,6 +60,14 @@ Renderer is now **top-down horizontal**: x→screen-horizontal, y→screen-verti
 ---
 
 ## History (done)
+- **"Quitarla" is now a lunge/slide steal**: the tackle used to fire only if you were already
+  within 2.6 m of the carrier, but the AI dribbles away and you could never close that gap — so the
+  button felt dead. Pressing action-2 without the ball now triggers `startLunge`: a committed dash
+  toward the nearest opposing carrier (or loose ball within ~11 m), and `tryLungeSteal` (called each
+  frame from `sim.step` while `lungeT > 0 && stealArmed`) wins the ball on first contact, one attempt
+  per lunge (base chance 0.6 + tackling attribute). `tackleCooldown` lowered 0.8→0.55 s for snappier
+  pressure. Measured ~63% steal from 4 m behind a stationary carrier (was 0%); repeated presses win it
+  reliably. Replaces the old stationary `doTackle`.
 - **5-a-side + possession-aware action button**: back to 5 players per side (formation 1-1-2-1:
   GK, DEF, 2×MID, FWD in `engine.FORMATION`, numbers `[1,4,6,8,9]`, `config.playersPerSide: 5`).
   The action-2 control is now labelled by possession: **"Disparo"** while you hold the ball,

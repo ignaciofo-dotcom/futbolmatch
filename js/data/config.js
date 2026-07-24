@@ -41,7 +41,7 @@ window.CONFIG = {
     controlRadius: 1.8,       // gain possession within this distance of a free ball
     kickCooldown: 0.35,
     tackleRange: 2.6,
-    tackleCooldown: 0.8,
+    tackleCooldown: 0.55,
     staminaMax: 100,
     staminaSprintDrain: 12,   // per second sprinting
     staminaRegen: 6,          // per second not sprinting

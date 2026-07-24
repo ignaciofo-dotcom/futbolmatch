@@ -31,6 +31,8 @@ window.Sim = (function () {
       else updateAI(match, p, dt);
       integratePlayer(p, dt);
     }
+    // Slide/lunge contact: a lunging player who reaches the opposing carrier tries to win the ball.
+    for (const pl of match.players) { if (pl.lungeT > 0 && pl.stealArmed) tryLungeSteal(match, pl); }
     handlePossession(match, dt);
     updateBall(match, dt);
 
@@ -73,7 +75,8 @@ window.Sim = (function () {
       if (window.Input.pressed('action1')) doPass(match, p);
     } else {
       match.chargingShot = false; match.shotCharge = 0;
-      if (window.Input.pressed('action2')) doTackle(match, p);
+      // "Quitarla": lunge toward the ball-carrier to close the gap and win the ball.
+      if (window.Input.pressed('action2') && p.tackleCd <= 0) startLunge(match, p);
     }
   }
 
@@ -354,27 +357,43 @@ window.Sim = (function () {
     window.Bus.emit('shot', { match, from: p });
   }
 
-  function doTackle(match, p) {
-    p.lungeT = 0.25; p.tackleCd = P.tackleCooldown;
+  // Start a committed lunge/slide toward the ball-carrier (or a nearby loose ball). This is what
+  // makes "Quitarla" feel responsive: pressing it always dashes your player at the ball, closing
+  // the gap so the steal actually connects (checked each frame during the slide by tryLungeSteal).
+  function startLunge(match, p) {
     const ball = match.ball;
-    if (ball.owner && ball.owner.team !== p.team) {
-      const d = dist(p, ball.owner);
-      let range = P.tackleRange;
-      if (window.MatchAbilities.effectActive(match, 'ABILITY_TACKLE')) range *= 1.4;
-      if (d < range) {
-        // shield protects the owner
-        if (window.MatchAbilities.ownerShielded && window.MatchAbilities.ownerShielded(match, ball.owner)) { window.Audio2.play('error'); return; }
-        const chance = 0.4 + (p.attrs.tackling - 50) * CFG.attrInfluence.tackling +
-          (window.MatchAbilities.effectActive(match, 'ABILITY_TACKLE') ? 0.3 : 0);
-        if (Math.random() < chance) {
-          const victim = ball.owner;
-          ball.owner = p; victim.kickCd = 0.4; p.kickCd = 0.1;
-          ball.lastTouch = p; ball.lastPasser = null;
-          window.Audio2.play('tackle');
-          if (p.isUser) window.Scoring.add(match, 'tackle');
-          window.Bus.emit('tackle', { match, by: p });
-        }
-      }
+    const carrier = (ball.owner && ball.owner.team !== p.team) ? ball.owner : null;
+    // Aim at a nearby opponent carrier or loose ball; otherwise just slide the way you're facing.
+    let tx = ball.x, ty = ball.y;
+    if (carrier) { tx = carrier.x; ty = carrier.y; }
+    const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy);
+    const near = d < 11 && d > 0.001;              // only home in on a target within pressure range
+    const dirx = near ? dx / d : Math.cos(p.facing);
+    const diry = near ? dy / d : Math.sin(p.facing);
+    const lungeSpeed = P.baseSpeed * speedFactor(p.attrs) * 1.9;
+    p.vx = dirx * lungeSpeed; p.vy = diry * lungeSpeed;
+    p.facing = Math.atan2(diry, dirx);
+    p.lungeT = 0.3; p.tackleCd = P.tackleCooldown; p.stealArmed = true;
+    window.Bus.emit('lunge', { match, by: p });
+  }
+
+  // While sliding, win the ball on first contact with the opposing carrier (one attempt per lunge).
+  function tryLungeSteal(match, p) {
+    const ball = match.ball, carrier = ball.owner;
+    if (!carrier || carrier.team === p.team) return;
+    let range = P.tackleRange * 1.35;
+    if (window.MatchAbilities.effectActive(match, 'ABILITY_TACKLE')) range *= 1.4;
+    if (dist(p, carrier) > range) return;          // not in contact yet — keep sliding
+    p.stealArmed = false;                          // commit the single attempt
+    if (window.MatchAbilities.ownerShielded && window.MatchAbilities.ownerShielded(match, carrier)) { window.Audio2.play('error'); return; }
+    const chance = 0.6 + (p.attrs.tackling - 50) * CFG.attrInfluence.tackling +
+      (window.MatchAbilities.effectActive(match, 'ABILITY_TACKLE') ? 0.3 : 0);
+    if (Math.random() < chance) {
+      ball.owner = p; carrier.kickCd = 0.4; p.kickCd = 0.1;
+      ball.lastTouch = p; ball.lastPasser = null;
+      window.Audio2.play('tackle');
+      if (p.isUser) window.Scoring.add(match, 'tackle');
+      window.Bus.emit('tackle', { match, by: p });
     }
   }
 
