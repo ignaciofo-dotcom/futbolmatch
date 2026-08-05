@@ -83,49 +83,74 @@ window.Renderer = (function () {
   // Little top-down footballer: shadow, swinging legs+arms (run cycle), shirt body, head+hair, number.
   function drawPlayer(match, p) {
     const P = project(p.x, p.y, 0);
-    const u = M(1), r = 2.3 * u;                                   // body radius (bigger characters)
+    const u = M(1), r = 3.1 * u;                                   // figure size (slim build, still bold on screen)
     const fx = Math.cos(p.facing), fy = Math.sin(p.facing), px = -fy, py = fx;
     const moving = Math.hypot(p.vx || 0, p.vy || 0);
     const swing = Math.sin((p.animPhase || 0) * Math.PI * 2) * Math.min(1, moving / 4.5);
 
-    ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.beginPath(); ctx.ellipse(P.x, P.y + r * 0.5, r * 1.15, r * 0.5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.beginPath(); ctx.ellipse(P.x, P.y + r * 0.5, r * 0.82, r * 0.38, 0, 0, 7); ctx.fill();
 
     if (p.isUser) {
       const gl = ctx.createRadialGradient(P.x, P.y, r * 0.3, P.x, P.y, r * 2.1);
       gl.addColorStop(0, 'rgba(125,211,252,.34)'); gl.addColorStop(1, 'rgba(125,211,252,0)');
       ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(P.x, P.y, r * 2.1, 0, 7); ctx.fill();
-      ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 0.4 * u; ctx.beginPath(); ctx.ellipse(P.x, P.y + r * 0.5, r * 1.15, r * 0.5, 0, 0, 7); ctx.stroke();
+      ctx.strokeStyle = '#7dd3fc'; ctx.lineWidth = 0.35 * u; ctx.beginPath(); ctx.ellipse(P.x, P.y + r * 0.5, r * 0.92, r * 0.44, 0, 0, 7); ctx.stroke();
       const eff = Object.keys(match.activeEffects || {})[0];
       if (eff && window.ABILITIES[eff]) { ctx.strokeStyle = window.ABILITIES[eff].color; ctx.lineWidth = 0.35 * u; ctx.beginPath(); ctx.arc(P.x, P.y, r * 1.45, 0, 7); ctx.stroke(); }
     }
 
-    // legs (animated)
-    ctx.strokeStyle = shade(p.colors[1], -30); ctx.lineWidth = 0.6 * u; ctx.lineCap = 'round';
+    // Everything below is drawn in the player's own frame: local +x = facing, +y = right side.
+    // Layered back-to-front so the run cycle stays readable: legs trail behind, then shorts,
+    // slim torso, arms, and the head at the front (which is what shows facing at a glance).
+    const skin = SKIN[(p.appearance && p.appearance.skin) || 1];
+    ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(p.facing);
+    ctx.lineCap = 'round';
+
+    // legs — trailing behind the torso so the stride reads from above
+    ctx.strokeStyle = skin; ctx.lineWidth = 0.3 * u;
     for (const side of [-1, 1]) {
-      const bx = P.x + px * side * r * 0.42, by = P.y + py * side * r * 0.42, sw = swing * side;
-      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + fx * (r * 0.75 + sw * r * 0.7), by + fy * (r * 0.75 + sw * r * 0.7)); ctx.stroke();
+      const sw = swing * side;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.14, side * r * 0.17);
+      ctx.lineTo(-r * 0.14 - r * 0.42 + sw * r * 0.36, side * r * 0.22 + sw * r * 0.1);
+      ctx.stroke();
+    }
+    // shorts, tucked between legs and shirt
+    ctx.fillStyle = shade(p.colors[1], -26);
+    ctx.beginPath(); ctx.ellipse(-r * 0.16, 0, r * 0.22, r * 0.34, 0, 0, 7); ctx.fill();
+
+    // arms swinging opposite to the legs
+    ctx.strokeStyle = skin; ctx.lineWidth = 0.26 * u;
+    for (const side of [-1, 1]) {
+      const sw = -swing * side;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.06, side * r * 0.34);
+      ctx.lineTo(r * 0.06 + sw * r * 0.42, side * r * 0.66);
+      ctx.stroke();
     }
 
-    // body (shirt) + arms, oriented to facing
-    ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(p.facing);
-    const g = ctx.createLinearGradient(-r, -r, r, r); g.addColorStop(0, shade(p.colors[0], 34)); g.addColorStop(1, p.colors[1]);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, r * 1.02, r * 0.9, 0, 0, 7); ctx.fill();
-    ctx.lineWidth = 0.22 * u; ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.stroke();
-    ctx.strokeStyle = shade(p.colors[0], 16); ctx.lineWidth = 0.5 * u; ctx.lineCap = 'round';
-    for (const side of [-1, 1]) { const sw = -swing * side; ctx.beginPath(); ctx.moveTo(r * 0.15, side * r * 0.72); ctx.lineTo(r * 0.15 + sw * r * 0.6, side * r * 1.15); ctx.stroke(); }
+    // torso (shirt): shoulders across, shallow front-to-back — an athletic build, not a ball
+    const g = ctx.createLinearGradient(0, -r * 0.5, 0, r * 0.5);
+    g.addColorStop(0, shade(p.colors[0], 30)); g.addColorStop(1, p.colors[1]);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(r * 0.02, 0, r * 0.34, r * 0.44, 0, 0, 7); ctx.fill();
+    ctx.lineWidth = 0.14 * u; ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.stroke();
+
+    // shirt number, on the back of the torso
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = `bold ${Math.round(r * 0.4)}px system-ui`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.save(); ctx.translate(-r * 0.04, 0); ctx.rotate(-p.facing); ctx.fillText(p.number, 0, 0); ctx.restore();
+
+    // head + hair at the front
+    const hr = r * 0.27, hcx = r * 0.42;
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(hcx, 0, hr, 0, 7); ctx.fill();
+    ctx.fillStyle = HAIR[(p.appearance && p.appearance.hair) || 0];
+    ctx.beginPath(); ctx.arc(hcx - hr * 0.36, 0, hr * 0.84, 0, 7); ctx.fill();
+    ctx.lineWidth = 0.14 * u; ctx.strokeStyle = 'rgba(0,0,0,.35)';
+    ctx.beginPath(); ctx.arc(hcx, 0, hr, 0, 7); ctx.stroke();
     ctx.restore();
 
-    if (p.isGK) { ctx.strokeStyle = '#fde047'; ctx.lineWidth = 0.3 * u; ctx.beginPath(); ctx.arc(P.x, P.y, r * 0.78, 0, 7); ctx.stroke(); }
-
-    // number on the shirt (toward the back so the head doesn't cover it)
-    ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = `bold ${Math.round(r * 0.8)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(p.number, P.x - fx * r * 0.28, P.y - fy * r * 0.28);
-
-    // head + hair at the front (shows facing)
-    const hx = P.x + fx * r * 0.5, hy = P.y + fy * r * 0.5, hr = r * 0.5;
-    ctx.fillStyle = SKIN[(p.appearance && p.appearance.skin) || 1]; ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 7); ctx.fill();
-    ctx.fillStyle = HAIR[(p.appearance && p.appearance.hair) || 0]; ctx.beginPath(); ctx.arc(hx - fx * hr * 0.4, hy - fy * hr * 0.4, hr * 0.9, 0, 7); ctx.fill();
-    ctx.lineWidth = 0.2 * u; ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(hx, hy, hr, 0, 7); ctx.stroke();
+    if (p.isGK) { ctx.strokeStyle = '#fde047'; ctx.lineWidth = 0.24 * u; ctx.beginPath(); ctx.arc(P.x, P.y, r * 0.68, 0, 7); ctx.stroke(); }
 
     if (p.bicycleT > 0) { p.bicycleT -= 1 / 60; ctx.globalAlpha = Math.max(0, p.bicycleT); ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.4 * u; ctx.beginPath(); ctx.arc(P.x, P.y, r * 1.7, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
   }

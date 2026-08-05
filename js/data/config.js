@@ -88,6 +88,7 @@ window.CONFIG = {
     shootRange: 26,             // distance from goal AI will attempt a shot
     passRange: 30,
     gkSpeed: 7,
+    gkHoldTime: 1.4,            // seconds an AI keeper holds the ball before releasing it
     supportSpread: 10,
   },
 

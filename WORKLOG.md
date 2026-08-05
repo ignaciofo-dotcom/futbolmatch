@@ -60,6 +60,20 @@ Renderer is now **top-down horizontal**: x→screen-horizontal, y→screen-verti
 ---
 
 ## History (done)
+- **Goalkeeper no longer deadlocks the match**: `goalKick`/saves hand the ball to the keeper, but
+  `updateGK` had **no release logic at all** — an AI keeper kept possession forever and play froze
+  (measured: away GK held the ball with speed 0 for the whole 6 s sample window). Added
+  `gkDistribute`: the keeper walks back to the line, holds for `ai.gkHoldTime` (1.4 s), then either
+  passes to the best-placed teammate upfield who isn't marked within 4 m, or hoofs a lofted clearance
+  downfield if everyone is covered. Verified the ball is released and play flows; over a 40 s driven
+  match the ball circulated among four different away players with the GK's longest hold ~0.6 s.
+  A user-controlled keeper is unaffected (it goes through `updateUser`, so you distribute manually).
+- **Slimmer player figures**: the old body was a near-circular ellipse (`r*1.02 × r*0.9`) that read as
+  fat, with the legs hidden underneath it. Rebuilt `render.drawPlayer` in the player's own rotated
+  frame, layered back-to-front: trailing animated legs, shorts, slim torso (`r*0.34 × r*0.44`,
+  shoulders across / shallow front-to-back), opposite-swinging arms, then a smaller head at the front.
+  Shadow tightened, shirt number counter-rotated so it stays upright. Figure scale `r` 2.3→3.1 so the
+  players stay big on screen while reading as athletic.
 - **"Quitarla" is now a lunge/slide steal**: the tackle used to fire only if you were already
   within 2.6 m of the carrier, but the AI dribbles away and you could never close that gap — so the
   button felt dead. Pressing action-2 without the ball now triggers `startLunge`: a committed dash

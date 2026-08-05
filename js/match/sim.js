@@ -189,6 +189,10 @@ window.Sim = (function () {
 
   function updateGK(match, p, dt, sp) {
     const ball = match.ball;
+    // Holding the ball (save or goal kick): wait a beat, then put it back in play. Without this
+    // an AI keeper keeps possession forever and the match deadlocks.
+    if (ball.owner === p) { gkDistribute(match, p, dt); return; }
+    p.holdT = 0;
     const lineX = p.attackDir > 0 ? 3.5 : F.length - 3.5;
     const ty = clamp(ball.y, GOAL_Y - GOAL_HALF - 1, GOAL_Y + GOAL_HALF + 1);
     // come off line slightly if ball close
@@ -196,6 +200,41 @@ window.Sim = (function () {
     const tx = ballOnMySide ? lineX + p.attackDir * clamp((25 - Math.abs(ball.x - lineX)) * 0.15, 0, 4) : lineX;
     steer(p, tx, ty, CFG.ai.gkSpeed, dt);
     p.facing = p.attackDir > 0 ? 0 : Math.PI;
+  }
+
+  // A keeper who has the ball holds it briefly, walks back onto the line, then releases it:
+  // a pass to the best-placed open teammate, or a long clearance upfield if everyone is marked.
+  function gkDistribute(match, p, dt) {
+    p.holdT = (p.holdT || 0) + dt;
+    const lineX = p.attackDir > 0 ? 4.5 : F.length - 4.5;
+    steer(p, lineX, clamp(p.y, GOAL_Y - GOAL_HALF, GOAL_Y + GOAL_HALF), CFG.ai.gkSpeed * 0.6, dt);
+    p.facing = p.attackDir > 0 ? 0 : Math.PI;   // always face upfield to release
+    if (p.holdT < CFG.ai.gkHoldTime) return;
+    p.holdT = 0;
+
+    // Prefer a teammate ahead of the keeper who isn't closely marked.
+    const mates = teammates(match, p).filter(m => m !== p && !m.isGK);
+    let best = null, bs = -Infinity;
+    for (const m of mates) {
+      const ahead = (m.x - p.x) * p.attackDir;                 // metres upfield of the keeper
+      if (ahead < 3) continue;
+      const marker = nearest(opponents(match, p), m.x, m.y);
+      const space = marker ? dist(marker, m) : 30;
+      if (space < 4) continue;                                  // too tightly marked to find
+      const score = space * 1.6 + ahead * 0.5 - Math.abs(m.y - p.y) * 0.15;
+      if (score > bs) { bs = score; best = m; }
+    }
+    if (best) { passTo(match, p, best); return; }
+
+    // Nobody free: hoof it long and high downfield, roughly toward the middle.
+    const ball = match.ball;
+    const tx = p.x + p.attackDir * 45, ty = clamp(F.width / 2 + rand(-14, 14), 4, F.width - 4);
+    const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy) || 1;
+    ball.owner = null; ball.kickerCd = CFG.player.kickCooldown; p.kickCd = CFG.player.kickCooldown;
+    ball.vx = dx / d * B.passSpeed * 1.25; ball.vy = dy / d * B.passSpeed * 1.25; ball.vz = B.loftRise * 0.7;
+    ball.lastTouch = p; ball.lastPasser = p;
+    window.Audio2.play('pass');
+    window.Bus.emit('pass', { match, from: p });
   }
 
   function steer(p, tx, ty, sp, dt) {
