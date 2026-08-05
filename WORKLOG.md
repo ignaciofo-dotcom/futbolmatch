@@ -60,6 +60,17 @@ Renderer is now **top-down horizontal**: x→screen-horizontal, y→screen-verti
 ---
 
 ## History (done)
+- **Presses no longer queue up and fire later**: `Input.pressed` consumes from an edge-latch counter
+  that survived indefinitely, so an action nothing polled (pressing Pase/Tiro with no ball, or Space
+  while holding it) stayed queued and executed the moment the situation changed — e.g. you win the
+  ball back and it is instantly passed away without you touching anything. Added `Input.endFrame()`
+  (called from `main.loopBody`) which drops unconsumed edges at the end of any frame where the
+  pollers actually ran. Crucially it is gated on `polled` — menu/splash frames always poll, match
+  frames only when at least one fixed sim step ran — so on a high-refresh display (frames with no
+  fixed step) a genuine tap is still held over to the next polling frame rather than dropped.
+  Verified: stale Pase and stale Tiro presses no longer fire on regaining the ball (before the fix
+  the ball left the player's feet at speed 17.3 with no input); 12/12 fast taps still register; pass
+  auto-switch, kickoff, lunge steal, GK release and menu navigation all unaffected.
 - **Goalkeeper no longer deadlocks the match**: `goalKick`/saves hand the ball to the keeper, but
   `updateGK` had **no release logic at all** — an AI keeper kept possession forever and play froze
   (measured: away GK held the ball with speed 0 for the whole 6 s sample window). Added

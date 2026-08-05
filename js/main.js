@@ -131,11 +131,19 @@ window.Game = (function () {
     if (dt > 0.1) dt = 0.1; // clamp after tab-out
     acc += dt;
 
+    // Tracks whether this frame actually gave the input pollers a chance to run. Unconsumed
+    // press-edges are discarded at the end of such a frame (see the endFrame call below), so an
+    // action that wasn't valid for your situation is dropped instead of queued for later. On a
+    // frame that polls nothing (high-refresh displays run frames with no fixed step) the edges
+    // are kept, so a genuine tap is never lost — it is simply handled on the next polling frame.
+    let polled = false;
+
     // discrete UI input (menus) — once per frame
     if (['MENU', 'CREATE', 'MYPLAYER', 'TOURNAMENT', 'TROPHIES', 'SETTINGS', 'PREMATCH', 'RESULT', 'TROPHY'].includes(state)) {
       pollUI();
+      polled = true;
     }
-    if (state === 'SPLASH') { if (window.Input.pressed('confirm') || anyKeyDown()) toMenu(); }
+    if (state === 'SPLASH') { if (window.Input.pressed('confirm') || anyKeyDown()) toMenu(); polled = true; }
 
     if (state === 'MATCH' && Self.match) {
       const m = Self.match;
@@ -153,6 +161,7 @@ window.Game = (function () {
         acc -= FIXED; steps++;
         if (m.phase === 'ENDED') break;
       }
+      if (steps > 0) polled = true;   // the sim ran, so gameplay actions had their chance
       window.Renderer.draw(m);
       window.UI.updateHUD(m);
       window.UI.updateOverlays(m);
@@ -160,6 +169,8 @@ window.Game = (function () {
     } else {
       acc = Math.min(acc, FIXED); // don't accumulate outside match
     }
+
+    if (polled) window.Input.endFrame();
   }
 
   function pollUI() {

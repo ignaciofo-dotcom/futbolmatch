@@ -102,6 +102,13 @@ window.Input = (function () {
   // (e.g. the Enter that caused a screen change) can't re-fire on the new screen.
   function consumeAll() { for (const c in edgeCodes) edgeCodes[c] = 0; for (const a in vEdge) vEdge[a] = 0; }
 
+  // Drop press-edges that nothing consumed this frame. A press only means something for the
+  // situation you were in when you made it: pressing shoot without the ball must do nothing,
+  // not sit in a queue and fire later when you win the ball back. The caller invokes this at
+  // the end of a frame in which the pollers actually ran, so a fast tap between two frames is
+  // still delivered exactly once — it just doesn't survive past the frame that could use it.
+  function endFrame() { consumeAll(); }
+
   // ---- virtual (touch) input API, driven by the on-screen controls ----
   function setVirtual(action, down) {
     if (down) { if (!vHeld[action]) { vHeld[action] = true; vEdge[action] = (vEdge[action] || 0) + 1; } }
@@ -118,6 +125,6 @@ window.Input = (function () {
   }
   function isTextMode() { return textMode; }
 
-  return { isDown, pressed, moveVector, setProfile, getProfile, beginText, isTextMode, actionsForCode, consumeAll,
+  return { isDown, pressed, moveVector, setProfile, getProfile, beginText, isTextMode, actionsForCode, consumeAll, endFrame,
            setVirtual, setTouchMove, clearVirtual };
 })();
